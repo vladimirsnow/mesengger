@@ -1,0 +1,89 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.row {
+    display: flex;
+    gap: 8px;
+    align-items: center
+}
+
+#messages {
+    height: 420px;
+    overflow: auto;
+    border: 1px solid #e0e0e0;
+    padding: 8px;
+    margin-top: 12px;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.msg {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eee
+}
+
+.meta {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px
+}
+
+img,
+video {
+    max-width: 320px;
+    border-radius: 6px;
+    display: block;
+    margin-top: 6px;
+}
+
+.small {
+    font-size: 13px;
+    color: #444
+}
+
+.controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center
+}
+
+input[type="file"] {
+    display: none
+}
+
+button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer
+}
+
+button.primary {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2
+}
+
+#progress {
+    font-size: 13px;
+    color: #333;
+    margin-left: 8px
+}

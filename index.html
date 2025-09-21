@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Мой мессенджер</title>
+  <meta charset="utf-8" />
+  <title>Мессенджер (Cloudinary + Firebase)</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Онлайн чат</h1>
+  <div class="container">
+    <h2>Онлайн мессенджер</h2>
 
-  <!-- Форма входа -->
-  <div id="auth">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Пароль">
-    <input id="nickname" type="text" placeholder="Ваш ник (только при регистрации)">
-    <button id="registerBtn">Регистрация</button>
-    <button id="loginBtn">Войти</button>
+    <!-- AUTH -->
+    <div id="auth">
+      <div class="row">
+        <input id="email" type="email" placeholder="Email" />
+        <input id="password" type="password" placeholder="Пароль" />
+        <input id="nickname" type="text" placeholder="Ник (для регистрации)" />
+      </div>
+      <div class="controls">
+        <button id="registerBtn">Регистрация</button>
+        <button id="loginBtn">Войти</button>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chat" style="display:none">
+      <div class="row">
+        <div class="small" id="welcome">Привет</div>
+        <button id="logoutBtn" style="margin-left:auto">Выйти</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="controls" style="margin-top:8px">
+        <input id="messageInput" type="text" placeholder="Введите сообщение..." style="flex:1" />
+        <label for="fileInput" title="Прикрепить файл" style="cursor:pointer; padding:8px; border:1px solid #ccc; border-radius:6px;">📎</label>
+        <button id="sendBtn" class="primary">Отправить</button>
+        <div id="progress"></div>
+      </div>
+
+      <!-- скрытый input file -->
+      <input type="file" id="fileInput" />
+    </div>
   </div>
 
-  <!-- Чат -->
-  <div id="chat" style="display:none;">
-    <p id="welcome"></p>
-    <input id="messageInput" type="text" placeholder="Введите сообщение">
-    <button id="sendBtn">Отправить</button>
-    <div id="messages"></div>
-  </div>
-
-  <!-- Firebase SDK -->
   <script type="module">
+    // ---------- Конфиг Firebase (вставлен твой) ----------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { 
-      getFirestore, collection, addDoc, serverTimestamp, onSnapshot, orderBy, query, doc, setDoc, getDoc 
+    import {
+      getFirestore, collection, addDoc, serverTimestamp,
+      query, orderBy, onSnapshot, doc, setDoc, getDoc
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-    import { 
-      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged 
+    import {
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+      onAuthStateChanged, signOut
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    // Твой конфиг
     const firebaseConfig = {
       apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
       authDomain: "messenger-3f86f.firebaseapp.com",
@@ -49,91 +69,208 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    let currentUserNick = "";
+    // ---------- Конфиг Cloudinary ----------
+    const cloudName = "du5qgenm4";            // твой Cloud Name
+    const uploadPreset = "messenger_upload";  // твой unsigned preset
 
-    // Регистрация
-    document.getElementById("registerBtn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const nickname = document.getElementById("nickname").value;
+    // ---------- Элементы DOM ----------
+    const authDiv = document.getElementById("auth");
+    const chatDiv = document.getElementById("chat");
+    const emailIn = document.getElementById("email");
+    const passIn = document.getElementById("password");
+    const nickIn = document.getElementById("nickname");
+    const registerBtn = document.getElementById("registerBtn");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const welcome = document.getElementById("welcome");
 
-      if (!email || !password || !nickname) {
-        alert("Заполни все поля!");
-        return;
-      }
+    const messagesDiv = document.getElementById("messages");
+    const msgInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const progressText = document.getElementById("progress");
+
+    let currentNick = "";
+    let currentUid = null;
+    let pendingFile = null; // выбранный файл
+
+    // ---------- Регистрация ----------
+    registerBtn.addEventListener("click", async () => {
+      const email = emailIn.value.trim();
+      const password = passIn.value;
+      const nickname = nickIn.value.trim();
+      if (!email || !password || !nickname) return alert("Заполни email, пароль и ник.");
 
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = userCredential.user.uid;
-
-        // Сохраняем ник в отдельной коллекции users
-        await setDoc(doc(db, "users", uid), {
-          nickname: nickname,
-          email: email
-        });
-
-        alert("Регистрация успешна! Теперь войди.");
-      } catch (error) {
-        alert(error.message);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = cred.user.uid;
+        // Сохраняем ник в коллекции users
+        await setDoc(doc(db, "users", uid), { nickname, email });
+        alert("Регистрация успешна. Теперь войди.");
+      } catch (e) {
+        alert(e.message);
       }
     });
 
-    // Вход
-    document.getElementById("loginBtn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
+    // ---------- Вход ----------
+    loginBtn.addEventListener("click", async () => {
+      const email = emailIn.value.trim();
+      const password = passIn.value;
+      if (!email || !password) return alert("Заполни email и пароль.");
       try {
         await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        alert(error.message);
+      } catch (e) {
+        alert(e.message);
       }
     });
 
-    // Следим за авторизацией
+    // ---------- Выход ----------
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    // ---------- Отслеживание авторизации ----------
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Получаем ник из Firestore
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        if (docSnap.exists()) {
-          currentUserNick = docSnap.data().nickname;
-        } else {
-          currentUserNick = "Без ника";
-        }
-
-        document.getElementById("auth").style.display = "none";
-        document.getElementById("chat").style.display = "block";
-        document.getElementById("welcome").innerText = "Привет, " + currentUserNick;
-
-        // Загружаем сообщения
-        const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-        onSnapshot(q, (snapshot) => {
-          const container = document.getElementById("messages");
-          container.innerHTML = "";
-          snapshot.forEach(doc => {
-            const msg = doc.data();
-            container.innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
-          });
-        });
+        currentUid = user.uid;
+        // Получаем ник
+        const udoc = await getDoc(doc(db, "users", user.uid));
+        currentNick = udoc.exists() ? (udoc.data().nickname || user.email) : user.email;
+        welcome.innerText = "Привет, " + currentNick;
+        authDiv.style.display = "none";
+        chatDiv.style.display = "block";
+        startMessagesListener();
       } else {
-        document.getElementById("auth").style.display = "block";
-        document.getElementById("chat").style.display = "none";
+        currentNick = "";
+        currentUid = null;
+        authDiv.style.display = "block";
+        chatDiv.style.display = "none";
+        messagesDiv.innerHTML = "";
+        stopMessagesListener();
       }
     });
 
-    // Отправка сообщений
-    document.getElementById("sendBtn").addEventListener("click", async () => {
-      const text = document.getElementById("messageInput").value;
-      if (!text) return;
-
-      await addDoc(collection(db, "messages"), {
-        text: text,
-        sender: currentUserNick,
-        timestamp: serverTimestamp()
+    // ---------- Слушатель сообщений ----------
+    let unsubscribe = null;
+    function startMessagesListener(){
+      const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+      unsubscribe = onSnapshot(q, (snap) => {
+        messagesDiv.innerHTML = "";
+        snap.forEach(docSnap => {
+          const m = docSnap.data();
+          renderMessage(m);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
+    }
+    function stopMessagesListener(){
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    }
 
-      document.getElementById("messageInput").value = "";
+    // ---------- Рендер сообщения ----------
+    function renderMessage(msg) {
+      const el = document.createElement("div");
+      el.className = "msg";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const timeStr = msg.timestamp && msg.timestamp.toDate ? new Date(msg.timestamp.toDate()).toLocaleString() : "";
+      meta.textContent = (msg.sender || "Anon") + (timeStr ? " • " + timeStr : "");
+      el.appendChild(meta);
+
+      if (msg.fileUrl) {
+        const url = msg.fileUrl;
+        const type = msg.fileType || "";
+        // image
+        if (type.startsWith("image/") || url.match(/\.(jpe?g|png|gif|webp)(\?|$)/i)) {
+          const i = document.createElement("img"); i.src = url; i.alt = msg.fileName || "image"; el.appendChild(i);
+        }
+        // video
+        else if (type.startsWith("video/") || url.match(/\.(mp4|webm|ogg)(\?|$)/i)) {
+          const v = document.createElement("video"); v.controls = true; v.src = url; el.appendChild(v);
+        }
+        // others
+        else {
+          const a = document.createElement("a"); a.href = url; a.target="_blank";
+          a.textContent = "📎 " + (msg.fileName || "Скачать файл");
+          el.appendChild(a);
+        }
+        // optional text under file
+        if (msg.text) {
+          const t = document.createElement("div"); t.className = "small"; t.textContent = msg.text; el.appendChild(t);
+        }
+      } else {
+        const p = document.createElement("div"); p.textContent = msg.text || ""; el.appendChild(p);
+      }
+
+      messagesDiv.appendChild(el);
+    }
+
+    // ---------- Обработка выбора файла ----------
+    fileInput.addEventListener("change", (e) => {
+      pendingFile = e.target.files[0] || null;
+      if (pendingFile) {
+        progressText.innerText = "Файл выбран: " + pendingFile.name;
+      } else {
+        progressText.innerText = "";
+      }
     });
+
+    // ---------- Отправка (текст + опционально файл) ----------
+    sendBtn.addEventListener("click", async () => {
+      const text = msgInput.value.trim();
+      // если файл есть — сначала загрузить в Cloudinary
+      try {
+        let fileUrl = null;
+        let fileType = null;
+        let fileName = null;
+
+        if (pendingFile) {
+          progressText.innerText = "Загружаю файл...";
+          const fd = new FormData();
+          fd.append("file", pendingFile);
+          fd.append("upload_preset", uploadPreset);
+
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+            method: "POST",
+            body: fd
+          });
+
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error("Cloudinary upload failed: " + errText);
+          }
+
+          const data = await res.json();
+          fileUrl = data.secure_url;
+          // file type лучше брать из выбранного файла
+          fileType = pendingFile.type || (data.resource_type === "image" ? "image/*" : "");
+          fileName = pendingFile.name || (data.public_id || "").split("/").pop();
+
+          progressText.innerText = "Файл загружен";
+        }
+
+        // Сохраняем в Firestore
+        await addDoc(collection(db, "messages"), {
+          text: text || "",
+          sender: currentNick || "Anon",
+          fileUrl: fileUrl || null,
+          fileType: fileType || null,
+          fileName: fileName || null,
+          timestamp: serverTimestamp()
+        });
+
+        // очистка
+        msgInput.value = "";
+        fileInput.value = "";
+        pendingFile = null;
+        progressText.innerText = "";
+      } catch (err) {
+        alert("Ошибка: " + err.message);
+        progressText.innerText = "";
+      }
+    });
+
+    // ---------- Конец скрипта ----------
   </script>
 </body>
 </html>
