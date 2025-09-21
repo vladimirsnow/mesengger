@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Мой мессенджер</title>
+</head>
+<body>
+  <h1>Онлайн чат</h1>
+  
+  <!-- Поле для текста -->
+  <input id="messageInput" type="text" placeholder="Введите сообщение">
+  <button id="sendBtn">Отправить</button>
+
+  <!-- Сюда будут появляться сообщения -->
+  <div id="messages"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, orderBy, query } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // Твой конфиг
+    const firebaseConfig = {
+      apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
+      authDomain: "messenger-3f86f.firebaseapp.com",
+      projectId: "messenger-3f86f",
+      storageBucket: "messenger-3f86f.firebasestorage.app",
+      messagingSenderId: "205110361755",
+      appId: "1:205110361755:web:be6c1487ac041bba7f903e",
+      measurementId: "G-XFRCVYP9XK"
+    };
+
+    // Инициализация
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Отправка сообщения
+    document.getElementById("sendBtn").addEventListener("click", async () => {
+      const text = document.getElementById("messageInput").value;
+      if (!text) return;
+
+      await addDoc(collection(db, "messages"), {
+        text: text,
+        sender: "Друг1", // позже можно сделать ввод имени
+        timestamp: serverTimestamp()
+      });
+
+      document.getElementById("messageInput").value = "";
+    });
+
+    // Чтение сообщений в реальном времени
+    const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+    onSnapshot(q, (snapshot) => {
+      const container = document.getElementById("messages");
+      container.innerHTML = "";
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        container.innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
+      });
+    });
+  </script>
+</body>
+</html>
