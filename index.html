@@ -44,7 +44,36 @@
     </div>
   </div>
 
+  <script src="firebase-messaging-sw.js"></script>
   <script type="module">
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
+const messaging = getMessaging(app);
+
+// Запрос разрешения на уведомления
+Notification.requestPermission().then((permission) => {
+  if (permission === "granted") {
+    getToken(messaging, {
+      vapidKey: "BI8xaSfZhsr-ZIi3OLSz0rRmSRipKjZQ_Bm9nPANIW4Jw2orbN2Ee3iC9wIQhPoO0a2U9laIKU2AayKV-hy3JYg"
+    }).then((currentToken) => {
+      if (currentToken) {
+        console.log("Push токен:", currentToken);
+        // тут можно сохранить токен в Firestore, чтобы потом посылать уведомления конкретным пользователям
+      } else {
+        console.log("Токен не получен");
+      }
+    });
+  }
+});
+
+onMessage(messaging, (payload) => {
+  console.log("Уведомление при открытой вкладке: ", payload);
+  new Notification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: payload.notification.icon
+  });
+});
+
+
     // ---------- Конфиг Firebase (вставлен твой) ----------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import {
