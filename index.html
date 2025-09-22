@@ -44,11 +44,9 @@
     </div>
   </div>
 
-
+  <script src="firebase-messaging-sw.js"></script>
   <script type="module">
-   // --- Импорт модулей ---
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
-// --- Инициализация Firebase ---
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
 const messaging = getMessaging(app);
 
 // --- Запрос разрешения на уведомления ---
