@@ -1,6 +1,5 @@
-// firebase-messaging-sw.js
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js");
 
 firebase.initializeApp({
   apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
@@ -21,7 +20,6 @@ messaging.onBackgroundMessage((payload) => {
     icon: payload.notification.icon
   });
 });
-
 
 // Дополнительно — ловим push (на случай, если FCM не вызовет onBackgroundMessage)
 self.addEventListener("push", (event) => {
