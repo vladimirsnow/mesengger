@@ -1,167 +1,354 @@
-/* --- Общие стили --- */
+/* =================================
+   Переменные для тем (по умолчанию светлая)
+   ================================= */
+:root {
+  /* Фон */
+  --bg-page: #f0f2f5;
+  --bg-container: #ffffff;
+  --bg-messages: #f9f9f9;
+  --bg-msg: #e9e9eb;
+  --bg-button: #f0f0f0;
+  --bg-button-hover: #e0e0e0;
+
+  /* Текст */
+  --text-primary: #1c1e21;
+  --text-secondary: #555;
+  --text-meta: #65676b;
+  --text-on-primary: #ffffff;
+  --text-on-own-msg: #ffffff;
+  --text-placeholder: #8a8d91;
+
+  /* Границы и фокус */
+  --border-color: #ccc;
+  --border-color-light: #ddd;
+  --focus-ring-color: rgba(0, 123, 255, 0.25);
+
+  /* Цвета действий */
+  --primary-color: #007bff;
+  --bg-msg-own: var(--primary-color);
+  --primary-hover: #0056b3;
+  --success-color: #28a745;
+  --success-hover: #218838;
+  --danger-color: #dc3545;
+  --danger-hover: #c82333;
+
+  /* Тени */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Общие стили */
 body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: #e0e0e0;
+  padding: 20px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
+  box-sizing: border-box;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .container {
   width: 100%;
-  max-width: 600px;
-  background: #1f1f1f;
-  border-radius: 12px;
-  margin: 20px;
-  padding: 16px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.6);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  max-width: 700px;
+  background-color: var(--bg-container);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  padding: 24px;
+  box-sizing: border-box;
+  transition: background-color 0.2s;
 }
 
-/* Заголовок */
-.container h2 {
+h2 {
   text-align: center;
-  margin: 0 0 10px;
-  color: #fff;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 24px;
 }
 
-/* Ряды */
-.row {
+/* Утилиты для компоновки */
+.row,
+.controls {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .controls {
-  display: flex;
-  gap: 8px;
+  margin-bottom: 0;
 }
 
-/* Инпуты */
+.small {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+/* Элементы форм */
 input[type="email"],
 input[type="password"],
 input[type="text"] {
   flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  outline: none;
-  background: #2c2c2c;
-  color: #fff;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 16px;
+  background-color: var(--bg-container);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 input::placeholder {
-  color: #aaa;
+  color: var(--text-placeholder);
+  opacity: 1; /* Для Firefox */
 }
 
-/* Кнопки */
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--focus-ring-color);
+}
+
 button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 8px;
-  background: #2962ff;
-  color: #fff;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-button);
+  color: var(--text-primary);
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 button:hover {
-  background: #1e40ff;
+  background-color: var(--bg-button-hover);
 }
 
-button.primary {
-  background: #2962ff;
+/* Стили кнопок */
+button.primary,
+#sendBtn {
+  background-color: var(--primary-color);
+  color: var(--text-on-primary);
+  border-color: var(--primary-color);
 }
 
-/* Сообщения */
-#messages {
+button.primary:hover,
+#sendBtn:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+#registerBtn,
+#loginBtn {
   flex: 1;
+  background-color: var(--success-color);
+  color: var(--text-on-primary);
+  border-color: var(--success-color);
+}
+
+#registerBtn:hover,
+#loginBtn:hover {
+  background-color: var(--success-hover);
+  border-color: var(--success-hover);
+}
+
+#logoutBtn {
+  background-color: var(--danger-color);
+  color: var(--text-on-primary);
+  border-color: var(--danger-color);
+}
+
+#logoutBtn:hover {
+  background-color: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+/* Стили чата */
+#chat .row {
+  margin-bottom: 12px;
+}
+
+#welcome {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+#messages {
+  height: 60vh;
+  min-height: 300px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 6px;
+  padding: 12px;
   overflow-y: auto;
-  max-height: 400px;
-  padding: 10px;
-  background: #181818;
-  border-radius: 8px;
+  background-color: var(--bg-messages);
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .msg {
-  background: #2c2c2c;
   padding: 8px 12px;
-  border-radius: 10px;
-  max-width: 75%;
+  background-color: var(--bg-msg);
+  border-radius: 18px;
+  max-width: 80%;
+  align-self: flex-start;
   word-wrap: break-word;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  line-height: 1.4;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.msg .meta {
-  font-size: 11px;
-  color: #999;
+.msg.own {
+  align-self: flex-end;
+  background-color: var(--bg-msg-own);
+  color: var(--text-on-own-msg);
+  border-radius: 18px 18px 4px 18px; /* "Хвостик" у сообщения */
 }
 
-.msg img {
-  max-width: 100%;
-  border-radius: 8px;
+.msg.own .meta {
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.msg video {
-  max-width: 100%;
-  border-radius: 8px;
-}
-
-.msg a {
-  color: #64b5f6;
-  text-decoration: none;
-}
-
-.msg a:hover {
+.msg.own a {
+  color: var(--text-on-own-msg);
   text-decoration: underline;
 }
 
-/* Текст под файлом */
-.msg .small {
-  font-size: 13px;
-  color: #ccc;
+.msg .meta {
+  font-size: 0.8em;
+  color: var(--text-meta);
+  margin-bottom: 4px;
 }
 
-/* Прогресс */
+.msg img,
+.msg video {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Скрытый инпут для файла */
+#fileInput {
+  display: none;
+}
+
 #progress {
-  font-size: 12px;
-  color: #aaa;
-  margin-left: 10px;
-  align-self: center;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  margin-left: 8px;
+  min-height: 1em; /* чтобы не прыгала разметка */
 }
 
-/* Адаптив под телефон */
-@media (max-width: 600px) {
+label[for="fileInput"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  width: 42px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 20px;
+  background-color: var(--bg-button);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+label[for="fileInput"]:hover {
+  background-color: var(--bg-button-hover);
+}
+
+/* =================================
+   Темная тема
+   ================================= */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Более яркий синий для темной темы */
+    --primary-color: #0b84ff;
+
+    --bg-page: #121212;
+    --bg-container: #1e1e1e;
+    --bg-messages: #121212;
+    --bg-msg: #3a3b3c;
+    --bg-button: #444;
+    --bg-button-hover: #555;
+
+    --text-primary: #e4e6eb;
+    --text-secondary: #b0b3b8;
+    --text-meta: #b0b3b8;
+    --text-on-own-msg: #ffffff;
+    --text-placeholder: #7c7f83;
+
+    --border-color: #4d4d4d;
+    --border-color-light: #3a3b3c;
+    --focus-ring-color: rgba(82, 158, 255, 0.3);
+
+    --shadow-color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* =================================
+   Адаптивность
+   ================================= */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+
   .container {
-    margin: 0;
-    border-radius: 0;
     max-width: 100%;
-    height: 100vh;
+    /* Устанавливаем высоту равной высоте видимой области на мобильных */
+    height: 100vh; /* Фоллбэк для старых браузеров */
+    height: 100dvh; /* Динамическая высота, учитывает UI браузера */
+    border-radius: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #chat {
+    /* Переопределяем инлайновый display:none, когда чат становится видимым */
+    display: flex !important;
+    flex-direction: column;
+    flex-grow: 1; /* Занять все доступное пространство */
+    min-height: 0; /* Для правильной работы flex-grow в некоторых браузерах */
   }
 
   #messages {
-    max-height: calc(100vh - 250px);
+    flex-grow: 1; /* Растянуть блок сообщений */
+    height: auto; /* Убрать фиксированную высоту */
   }
 
-  input[type="email"],
-  input[type="password"],
-  input[type="text"] {
-    font-size: 14px;
+  /* Ставим инпуты аутентификации друг под другом */
+  #auth .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  /* На очень маленьких экранах переносим контролы отправки сообщения */
+  .controls {
+    flex-wrap: wrap;
   }
 
-  button {
-    padding: 8px 12px;
-    font-size: 14px;
+  #sendBtn {
+    flex-basis: 100%; /* Кнопка отправки на всю ширину */
+    margin-top: 8px;
   }
 }
