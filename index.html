@@ -62,7 +62,7 @@
     apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
     authDomain: "messenger-3f86f.firebaseapp.com",
     projectId: "messenger-3f86f",
-    storageBucket: "messenger-3f86f.firebasestorage.app",
+    storageBucket: "messenger-3f86f.appspot.com"
     messagingSenderId: "205110361755",
     appId: "1:205110361755:web:be6c1487ac041bba7f903e",
     measurementId: "G-XFRCVYP9XK"
@@ -300,7 +300,7 @@
     });
 
       if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/firebase-messaging-sw.js")
+navigator.serviceWorker.register("/mesengger/firebase-messaging-sw.js")
       .then((reg) => {
         console.log("Service Worker зарегистрирован:", reg);
       })
