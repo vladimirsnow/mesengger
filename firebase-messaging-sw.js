@@ -1,7 +1,8 @@
 // firebase-messaging-sw.js
-importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js");
 
+// Конфиг Firebase (тот же, что в index.html)
 firebase.initializeApp({
   apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
   authDomain: "messenger-3f86f.firebaseapp.com",
@@ -14,13 +15,11 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Обработка входящих пушей
 messaging.onBackgroundMessage((payload) => {
-  console.log("Получено фоновое сообщение: ", payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
+  console.log("Получено сообщение в SW:", payload);
+  self.registration.showNotification(payload.notification.title, {
     body: payload.notification.body,
-    icon: "/icon.png"
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
+    icon: payload.notification.icon
+  });
 });

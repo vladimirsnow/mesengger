@@ -299,15 +299,55 @@
       }
     });
 
-      if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/firebase-messaging-sw.js")
-      .then((reg) => {
-        console.log("Service Worker зарегистрирован:", reg);
-      })
-      .catch((err) => {
-        console.error("Ошибка регистрации SW:", err);
-      });
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/mesengger/firebase-messaging-sw.js")
+    .then((reg) => {
+      console.log("Service Worker зарегистрирован:", reg);
+    })
+    .catch((err) => {
+      console.error("Ошибка регистрации SW:", err);
+    });
+}
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
+  authDomain: "messenger-3f86f.firebaseapp.com",
+  projectId: "messenger-3f86f",
+  storageBucket: "messenger-3f86f.firebasestorage.app",
+  messagingSenderId: "205110361755",
+  appId: "1:205110361755:web:be6c1487ac041bba7f903e",
+  measurementId: "G-XFRCVYP9XK"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+// Запрос разрешения
+Notification.requestPermission().then((permission) => {
+  if (permission === "granted") {
+    console.log("Разрешение получено");
+    getToken(messaging, {
+      vapidKey: "BI8xaSfZhsr-ZIi3OLSz0rRmSRipKjZQ_Bm9nPANIW4Jw2orbN2Ee3iC9wIQhPoO0a2U9laIKU2AayKV-hy3JYg"
+    }).then((token) => {
+      console.log("FCM токен:", token);
+      // Тут можно сохранить токен в Firestore
+    });
+  } else {
+    console.log("Разрешение на уведомления отклонено");
   }
+});
+
+// Уведомления, когда вкладка открыта
+onMessage(messaging, (payload) => {
+  console.log("Уведомление в активной вкладке:", payload);
+  new Notification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: payload.notification.icon
+  });
+});
 
     // ---------- Конец скрипта ----------
   </script>
