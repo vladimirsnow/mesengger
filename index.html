@@ -301,6 +301,16 @@
       }
     });
 
+      if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/firebase-messaging-sw.js")
+      .then((reg) => {
+        console.log("Service Worker зарегистрирован:", reg);
+      })
+      .catch((err) => {
+        console.error("Ошибка регистрации SW:", err);
+      });
+  }
+
     // ---------- Конец скрипта ----------
   </script>
 </body>
