@@ -57,8 +57,6 @@ let currentNick = "";
 let currentUid = null;
 let pendingFile = null;
 
-// Удалена логика регистрации (кнопка "Регистрация" и её обработчик)
-
 loginBtn.addEventListener("click", async () => {
     const email = emailIn.value.trim();
     const password = passIn.value;

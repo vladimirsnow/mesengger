@@ -1,52 +1,52 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Мессенджер max</title>
-    <link rel="stylesheet" href="styles.css" />
+       
+    <meta charset="utf-8" />
+       
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Мессенджер max</title>
+       
+    <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-    <div class="container">
-        <h2>Мессенджер MAX</h2>
+        <div class="container">
+                <h2>Мессенджер MAX</h2>
 
-        <div id="auth">
-            <div class="row">
-                <input id="email" type="email" placeholder="Email" />
-                <input id="password" type="password" placeholder="Пароль" />
-            </div>
-            <div class="controls">
-                <button id="loginBtn">Войти</button>
-            </div>
-        </div>
+                <div id="auth">
+                        <div class="row">
+                                <input id="email" type="email" placeholder="Email" />
+                                <input id="password" type="password" placeholder="Пароль" />
+                            </div>
+                        <div class="controls">
+                                <button id="loginBtn">Войти</button>
+                            </div>
+                    </div>
 
-        <div id="chat" style="display: none">
-            <div class="row">
-                <div class="small" id="welcome">Привет</div>
-                <button id="logoutBtn" style="margin-left: auto">Выйти</button>
-            </div>
+                <div id="chat" style="display: none">
+                        <div class="row">
+                                <div class="small" id="welcome">Привет</div>
+                                <button id="logoutBtn" style="margin-left: auto">Выйти</button>
+                            </div>
 
-            <div id="messages"></div>
+                        <div id="messages"></div>
 
-            <div class="controls" style="margin-top: 8px">
-                <input
-                        id="messageInput"
-                        type="text"
-                        placeholder="Введите сообщение..."
-                        style="flex: 1"
-                />
-                <label
-                        for="fileInput"
-                        title="Прикрепить файл"
-                        style="cursor: pointer; padding: 8px; border: 1px solid #ccc; border-radius: 6px">📎</label
-                >
-                <button id="sendBtn" class="primary">Отправить</button>
-                <div id="progress"></div>
-            </div>
+                        <div class="controls" style="margin-top: 8px">
+                                <input id="messageInput" type="text" placeholder="Введите сообщение..."
+                    style="flex: 1" />
+                                <label for="fileInput" title="Прикрепить файл"
+                    style="cursor: pointer; padding: 8px; border: 1px solid #ccc; border-radius: 6px">📎</label>
+                                <button id="sendBtn" class="primary">Отправить</button>
+                                <div id="progress"></div>
+                            </div>
 
-            <input type="file" id="fileInput" />
-        </div>
-    </div>
-    <script type="module" src="app.js"></script>
+                        <input type="file" id="fileInput" />
+                    </div>
+            </div>
+       
+    <script type="module" src="app.js"></script>
 </body>
+
 </html>
