@@ -1,6 +1,5 @@
-// firebase-messaging-sw.js
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js");
 
 // Конфиг
 firebase.initializeApp({
@@ -28,7 +27,7 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(title, options);
 });
 
-// На случай, если FCM вызовет просто push-событие
+// Дополнительно — ловим push (на случай, если FCM не вызовет onBackgroundMessage)
 self.addEventListener("push", (event) => {
   if (event.data) {
     const payload = event.data.json();
