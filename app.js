@@ -19,11 +19,6 @@ import {
     onAuthStateChanged,
     signOut,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import {
-    getMessaging,
-    getToken,
-    onMessage,
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
@@ -38,69 +33,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const messaging = getMessaging(app);
-
-// ---------- Уведомления (логика интегрирована) ----------
-
-// Helper function to convert VAPID key
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-// Subscribe to push notifications
-async function subscribeToPushNotifications() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.warn('Push-уведомления не поддерживаются вашим браузером.');
-        return;
-    }
-
-    try {
-        const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-        const permission = await Notification.requestPermission();
-
-        if (permission === 'granted') {
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array('BI8xaSfZhsr-ZIi3OLSz0rRmSRipKjZQ_Bm9nPANIW4Jw2orbN2Ee3iC9wIQhPoO0a2U9laIKU2AayKV-hy3JYg')
-            });
-            console.log('Push-подписка:', JSON.stringify(subscription));
-            // Здесь вы можете отправить объект подписки на ваш сервер, чтобы он мог отправлять уведомления
-        } else {
-            console.warn('Разрешение на push-уведомления не предоставлено.');
-        }
-    } catch (e) {
-        console.error('Ошибка при подписке на push-уведомления:', e);
-    }
-}
-
-// Handle messages in the foreground (when the app is open)
-onMessage(messaging, (payload) => {
-    console.log("Уведомление на открытой вкладке:", payload);
-    new Notification(payload.notification.title, {
-        body: payload.notification.body,
-        icon: payload.notification.icon,
-    });
-});
-
-// Automatically try to subscribe when the user logs in
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        // ... (ваш существующий код)
-        subscribeToPushNotifications(); // <-- Вот здесь мы вызываем функцию подписки
-    } else {
-        // ...
-    }
-});
-
 
 // ---------- Конфиг Cloudinary ----------
 const cloudName = "du5qgenm4";
