@@ -1,6 +1,6 @@
 @media (max-width: 768px) {
 body {
-padding: 0;
+align-items: flex-start;
 }
 
 .container {
