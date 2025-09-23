@@ -1,6 +1,6 @@
 // Import the new modular Firebase SDKs
 importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-messaging.js");
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-sw.js');
 
 // Initialize Firebase with the same config from your HTML file
 const firebaseConfig = {
