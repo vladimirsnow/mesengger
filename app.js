@@ -179,18 +179,14 @@ fileInput.addEventListener("change", (e) => {
     }
 });
 
-sendBtn.addEventListener("click", async () => {
-    await sendMessage();
-});
-
-msgInput.addEventListener("keydown", async (e) => {
+msgInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
-        await sendMessage();
+        sendBtn.click();
     }
 });
 
-async function sendMessage() {
+sendBtn.addEventListener("click", async () => {
     const text = msgInput.value.trim();
     try {
         let fileUrl = null;
@@ -234,8 +230,4 @@ async function sendMessage() {
         alert("Ошибка: " + err.message);
         progressText.innerText = "";
     }
-}
-// --- Конец вставки ---
-
-// ...удали старый обработчик sendBtn.addEventListener("click", ...)
-// ...existing code...
+});
