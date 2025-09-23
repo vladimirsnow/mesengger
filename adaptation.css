@@ -11,6 +11,10 @@ border-radius: 0;
 padding: 16px;
 }
 
+h2 {
+margin-bottom: 16px;
+}
+
 #auth .row {
 flex-direction: column;
 align-items: stretch;
@@ -25,5 +29,4 @@ flex-wrap: wrap;
 #sendBtn {
 flex-basis: 100%;
 margin-top: 8px;
-}
 }

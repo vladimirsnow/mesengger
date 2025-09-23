@@ -17,7 +17,7 @@
 --border-color-light: #ddd;
 --focus-ring-color: rgba(0, 123, 255, 0.25);
 
---primary-color: #0084FF;
+--primary-color: #0084FF; 
 --bg-msg-own: var(--primary-color);
 --primary-hover: #006ee6;
 --success-color: #28a745;
@@ -57,6 +57,7 @@ box-sizing: border-box;
 transition: background-color 0.2s;
 display: flex;
 flex-direction: column;
+padding: 24px;
 }
 
 h2 {
@@ -83,7 +84,6 @@ font-size: 0.9em;
 color: var(--text-secondary);
 }
 
-/* Элементы форм */
 input[type="email"],
 input[type="password"],
 input[type="text"] {
@@ -243,8 +243,8 @@ display: none;
 font-size: 0.8em;
 color: var(--text-secondary);
 margin-left: 8px;
-min-height: 1em;
-
+min-height: 1em; 
+}
 label[for="fileInput"] {
 display: flex;
 align-items: center;
@@ -262,7 +262,6 @@ transition: background-color 0.2s, border-color 0.2s;
 label[for="fileInput"]:hover {
 background-color: var(--bg-button-hover);
 }
-
 @media (prefers-color-scheme: dark) {
 :root {
 --primary-color: #52a7f0;
