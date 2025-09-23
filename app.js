@@ -43,8 +43,7 @@ const authDiv = document.getElementById("auth");
 const chatDiv = document.getElementById("chat");
 const emailIn = document.getElementById("email");
 const passIn = document.getElementById("password");
-const nickIn = document.getElementById("nickname");
-const registerBtn = document.getElementById("registerBtn");
+// Удален элемент "nickname"
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const welcome = document.getElementById("welcome");
@@ -58,20 +57,7 @@ let currentNick = "";
 let currentUid = null;
 let pendingFile = null;
 
-registerBtn.addEventListener("click", async () => {
-    const email = emailIn.value.trim();
-    const password = passIn.value;
-    const nickname = nickIn.value.trim();
-    if (!email || !password || !nickname) return alert("Заполни email, пароль и ник.");
-    try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = cred.user.uid;
-        await setDoc(doc(db, "users", uid), { nickname, email });
-        alert("Регистрация успешна. Теперь войди.");
-    } catch (e) {
-        alert(e.message);
-    }
-});
+// Удалена логика регистрации (кнопка "Регистрация" и её обработчик)
 
 loginBtn.addEventListener("click", async () => {
     const email = emailIn.value.trim();
@@ -179,7 +165,6 @@ fileInput.addEventListener("change", (e) => {
     }
 });
 
-// Новый обработчик для клавиши "Enter"
 msgInput.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
@@ -187,7 +172,6 @@ msgInput.addEventListener("keydown", async (e) => {
     }
 });
 
-// Обработчик для кнопки отправки
 sendBtn.addEventListener("click", async () => {
     await sendMessage();
 });
