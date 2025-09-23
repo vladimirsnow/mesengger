@@ -1,46 +1,34 @@
-// Import the new modular Firebase SDKs
-importScripts("https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js");
+// Импортируем скрипт Firebase Messaging для Service Worker. 
+// Важно использовать этот скрипт, а не импортировать отдельные модули вручную.
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-sw.js');
 
-// Initialize Firebase with the same config from your HTML file
+// Настройки приложения Firebase.
+// Это должен быть тот же объект, который вы используете для инициализации основного приложения.
 const firebaseConfig = {
-  apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
-  authDomain: "messenger-3f86f.firebaseapp.com",
-  projectId: "messenger-3f86f",
-  storageBucket: "messenger-3f86f.appspot.com",
-  messagingSenderId: "205110361755",
-  appId: "1:205110361755:web:be6c1487ac041bba7f903e",
-  measurementId: "G-XFRCVYP9XK",
+    apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
+    authDomain: "messenger-3f86f.firebaseapp.com",
+    projectId: "messenger-3f86f",
+    storageBucket: "messenger-3f86f.appspot.com",
+    messagingSenderId: "205110361755",
+    appId: "1:205110361755:web:be6c1487ac041bba7f903e",
+    measurementId: "G-XFRCVYP9XK",
 };
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+// Инициализируем Firebase
+firebase.initializeApp(firebaseConfig);
 
-// Handle background messages
-onBackgroundMessage(messaging, (payload) => {
-  console.log("Получено сообщение в SW:", payload);
+// Получаем сервис-воркер Firebase Messaging
+const messaging = firebase.messaging();
 
-  const title = payload.notification?.title || "Новое сообщение";
-  const options = {
-    body: payload.notification?.body || "",
-    icon: payload.notification?.icon || "/mesengger/icon.png", // Correct the icon path
-  };
+// Обработка фоновых сообщений
+messaging.onBackgroundMessage((payload) => {
+    console.log('[Service Worker] Push Received.');
 
-  self.registration.showNotification(title, options);
-});
-
-// Дополнительно - ловим push (на случай, если FCM не вызовет onBackgroundMessage)
-self.addEventListener("push", (event) => {
-  if (event.data) {
-    const payload = event.data.json();
-    console.log("Push event:", payload);
-
-    const title = payload.notification?.title || "Новое уведомление";
-    const options = {
-      body: payload.notification?.body || "",
-      icon: payload.notification?.icon || "/mesengger/icon.png", // Correct the icon path
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: payload.notification.icon || '/mesengger/icon.png' // Убедитесь, что путь правильный
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
-  }
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
