@@ -178,10 +178,7 @@ fileInput.addEventListener("change", (e) => {
         progressText.innerText = "";
     }
 });
-// ...existing code...
-const progressText = document.getElementById("progress");
 
-// --- Вставь сюда ---
 sendBtn.addEventListener("click", async () => {
     await sendMessage();
 });
