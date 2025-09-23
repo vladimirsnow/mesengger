@@ -178,8 +178,22 @@ fileInput.addEventListener("change", (e) => {
         progressText.innerText = "";
     }
 });
+// ...existing code...
+const progressText = document.getElementById("progress");
 
+// --- Вставь сюда ---
 sendBtn.addEventListener("click", async () => {
+    await sendMessage();
+});
+
+msgInput.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        await sendMessage();
+    }
+});
+
+async function sendMessage() {
     const text = msgInput.value.trim();
     try {
         let fileUrl = null;
@@ -223,4 +237,8 @@ sendBtn.addEventListener("click", async () => {
         alert("Ошибка: " + err.message);
         progressText.innerText = "";
     }
-});
+}
+// --- Конец вставки ---
+
+// ...удали старый обработчик sendBtn.addEventListener("click", ...)
+// ...existing code...
