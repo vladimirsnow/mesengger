@@ -1,10 +1,16 @@
 @media (max-width: 768px) {
   .container {
     padding: 16px;
+    height: 100%; /* Занимает всю высоту на мобильных */
+    overflow: hidden;
   }
 
   h2 {
     margin-bottom: 16px;
+  }
+
+  #chatHeader h2 {
+    font-size: 1.2em; /* Уменьшаем заголовок чата */
   }
 
   #auth .row {
@@ -12,46 +18,47 @@
     align-items: stretch;
   }
 
-    #chat {
-        flex-direction: column; /* Элементы идут сверху вниз */
-        position: relative; /* Важно для позиционирования наложения */
-    }
+  #chat {
+    flex-direction: column;
+    position: relative; /* Для позиционирования кнопки-гамбургера */
+    gap: 0; /* Убираем отступ между элементами на мобильных */
+  }
 
-    /* Основной чат должен занимать всю доступную ширину */
-    #mainChatArea {
-        width: 100%;
-    }
+  #mainChatArea {
+    width: 100%;
+    flex-grow: 1;
+  }
 
-    /* 1. Скрываем список чатов по умолчанию */
-    #chatListContainer {
-        position: fixed; /* Наложение поверх всего */
-        top: 0;
-        left: 0;
-        width: 100%; /* Занимает всю ширину */
-        max-width: 300px; /* Или оставьте 100% */
-        height: 100%;
-        background-color: var(--background-color, white); /* Ваш цвет фона */
-        z-index: 1000; /* Поверх всех остальных элементов */
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-        
-        /* Изначально скрываем на мобильном устройстве */
-        display: none; 
-    }
+  /* 1. Список чатов становится боковой панелью */
+  #chatListContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80%;
+    max-width: 300px;
+    height: 100%;
+    background-color: var(--bg-container);
+    z-index: 1000;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    transform: translateX(-100%); /* Изначально скрыт за экраном */
+    transition: transform 0.3s ease-in-out;
+    padding: 16px;
+    border-right: none;
+  }
 
-    /* 2. Отображаем кнопки управления */
-    #toggleChatListBtn {
-        display: block; /* Показываем кнопку-гамбургер */
-        position: absolute; /* Позиционируем в заголовке */
-        top: 10px; 
-        left: 10px;
-        z-index: 100;
-    }
-    
-    #closeChatListBtn {
-        display: block; /* Показываем кнопку закрытия внутри списка */
-        align-self: flex-end; /* Размещаем в углу */
-        margin: 10px;
-    }
+  /* 2. Показываем кнопку-гамбургер */
+  #toggleChatListBtn {
+    display: block;
+    position: absolute;
+    top: -2px;
+    left: -4px;
+  }
+
+  #closeChatListBtn {
+    display: block; /* Показываем кнопку закрытия внутри списка */
+    align-self: flex-end; /* Размещаем в углу */
+    margin: 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -71,29 +78,29 @@
  * ------------------------------
  */
 @media (max-width: 600px) {
-    /* На мобильных устройствах делаем локальное видео крупнее */
-    #localVideo {
-        width: 40%;
-        max-width: 120px;
-        top: 10px;
-        right: 10px;
-        border-width: 2px;
-    }
-    
-    .call-content {
-        padding: 10px;
-        width: 100%; /* На мобильном используем всю доступную ширину */
-        max-width: 100%;
-    }
+  /* На мобильных устройствах делаем локальное видео крупнее */
+  #localVideo {
+    width: 40%;
+    max-width: 120px;
+    top: 10px;
+    right: 10px;
+    border-width: 2px;
+  }
 
-    #callStatus {
-        font-size: 1.3em;
-        margin-bottom: 15px;
-    }
+  .call-content {
+    padding: 10px;
+    width: 100%; /* На мобильном используем всю доступную ширину */
+    max-width: 100%;
+  }
 
-    /* Уменьшаем вертикальные отступы кнопок на мобильных */
-    #callControls {
-        margin-top: 20px;
-        gap: 15px;
-    }
+  #callStatus {
+    font-size: 1.3em;
+    margin-bottom: 15px;
+  }
+
+  /* Уменьшаем вертикальные отступы кнопок на мобильных */
+  #callControls {
+    margin-top: 20px;
+    gap: 15px;
+  }
 }

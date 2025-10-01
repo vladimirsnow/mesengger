@@ -74,8 +74,13 @@ const searchNickname = document.getElementById("searchNickname");
 const searchUserBtn = document.getElementById("searchUserBtn");
 const searchResults = document.getElementById("searchResults");
 const groupNameInput = document.getElementById("groupNameInput");
+const toggleChatListBtn = document.getElementById("toggleChatListBtn");
+const closeChatListBtn = document.getElementById("closeChatListBtn");
+const chatListContainer = document.getElementById("chatListContainer");
 const groupNameLabel = document.getElementById("groupNameLabel");
-const groupParticipantsDisplay = document.getElementById("groupParticipantsDisplay");
+const groupParticipantsDisplay = document.getElementById(
+  "groupParticipantsDisplay"
+);
 const currentNickDisplay = document.getElementById("currentNickDisplay");
 const finalizeChatBtn = document.getElementById("finalizeChatBtn");
 
@@ -88,9 +93,6 @@ const answerCallBtn = document.getElementById("answerCallBtn");
 const hangupCallBtn = document.getElementById("hangupCallBtn");
 const callMessage = document.getElementById("callMessage");
 // ----------------------------------------
-
-
-
 
 // --- НОВЫЕ Глобальные Переменные для WebRTC ---
 let peerConnection = null;
@@ -105,11 +107,10 @@ let currentUid = null;
 let pendingFile = null;
 
 let currentChatId = "global";
-let currentChatTargetUid = null; 
+let currentChatTargetUid = null;
 
 // Состояние для создания группы/чата
 let pendingGroupParticipants = {}; // {uid: nickname, ...}
-
 
 // ---------- Аутентификация ----------
 
@@ -133,20 +134,19 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUid = user.uid;
     const udoc = await getDoc(doc(db, "users", user.uid));
-    
+
     currentNick = udoc.exists()
       ? udoc.data().nickname || user.email
       : user.email;
-      
+
     welcome.innerText = "Привет, " + currentNick;
-    currentNickDisplay.innerText = currentNick; 
+    currentNickDisplay.innerText = currentNick;
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
-    
-    // Сначала переключаем, потом начинаем слушать чаты
-    switchChat("global", "Общий чат"); 
-    startChatsListener();
 
+    // Сначала переключаем, потом начинаем слушать чаты
+    switchChat("global", "Общий чат");
+    startChatsListener();
   } else {
     currentNick = "";
     currentUid = null;
@@ -170,7 +170,11 @@ registerBtn.addEventListener("click", async () => {
   }
 
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
     await setDoc(doc(db, "users", userCredential.user.uid), {
       email: email,
@@ -190,18 +194,17 @@ let unsubscribeMessages = null;
 let unsubscribeChats = null;
 
 function startMessagesListener(chatId) {
-  stopMessagesListener(); 
+  stopMessagesListener();
 
-  const collectionPath = chatId === "global"
-    ? "messages" 
-    : `chats/${chatId}/messages`; 
+  const collectionPath =
+    chatId === "global" ? "messages" : `chats/${chatId}/messages`;
 
   const q = query(collection(db, collectionPath), orderBy("timestamp", "asc"));
   unsubscribeMessages = onSnapshot(q, (snap) => {
     messagesDiv.innerHTML = "";
     snap.forEach((docSnap) => {
       const m = docSnap.data();
-      m.isOwn = m.uid === currentUid; 
+      m.isOwn = m.uid === currentUid;
       renderMessage(m);
     });
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -218,34 +221,45 @@ function stopMessagesListener() {
 // ФУНКЦИЯ ПРОСЛУШИВАНИЯ СПИСКА ЧАТОВ (DM и ГРУПП)
 function startChatsListener() {
   if (!currentUid) {
-      console.log("startChatsListener: currentUid не установлен. Прерываю.");
-      return;
+    console.log("startChatsListener: currentUid не установлен. Прерываю.");
+    return;
   }
 
   const q = query(
     collection(db, "chats"),
     where("participants", "array-contains", currentUid),
-    orderBy("updatedAt", "desc") 
+    orderBy("updatedAt", "desc")
   );
 
-  console.log("startChatsListener: Подписка на список чатов активна для UID:", currentUid);
+  console.log(
+    "startChatsListener: Подписка на список чатов активна для UID:",
+    currentUid
+  );
 
-  unsubscribeChats = onSnapshot(q, (snap) => {
-    // Удаляем все элементы, добавленные через renderChatItem (они имеют класс .dm-item)
-    chatList.querySelectorAll(".dm-item").forEach(el => el.remove()); 
-    
-    let count = 0;
-    snap.forEach((docSnap) => {
-      if (docSnap.id === "global") return; 
-      renderChatItem(docSnap.id, docSnap.data());
-      count++;
-    });
-    console.log(`startChatsListener: Получено и отрисовано ${count} DM/групповых чатов.`);
-  }, (error) => {
+  unsubscribeChats = onSnapshot(
+    q,
+    (snap) => {
+      // Удаляем все элементы, добавленные через renderChatItem (они имеют класс .dm-item)
+      chatList.querySelectorAll(".dm-item").forEach((el) => el.remove());
+
+      let count = 0;
+      snap.forEach((docSnap) => {
+        if (docSnap.id === "global") return;
+        renderChatItem(docSnap.id, docSnap.data());
+        count++;
+      });
+      console.log(
+        `startChatsListener: Получено и отрисовано ${count} DM/групповых чатов.`
+      );
+    },
+    (error) => {
       // Это отладочный блок для выявления проблем с правилами безопасности Firestore
       console.error("startChatsListener: Ошибка Firestore:", error);
-      alert("Не удалось загрузить список чатов. Проверьте консоль разработчика (F12)!");
-  });
+      alert(
+        "Не удалось загрузить список чатов. Проверьте консоль разработчика (F12)!"
+      );
+    }
+  );
 }
 
 function stopChatsListener() {
@@ -257,16 +271,19 @@ function stopChatsListener() {
 
 // ПЕРЕКЛЮЧЕНИЕ АКТИВНОГО ЧАТА
 function switchChat(newChatId, chatName, targetUid = null) {
-  
-  document.querySelectorAll(".chat-item").forEach(el => el.classList.remove("active"));
-  
-  const newActiveElement = document.querySelector(`[data-chat-id="${newChatId}"]`);
+  document
+    .querySelectorAll(".chat-item")
+    .forEach((el) => el.classList.remove("active"));
+
+  const newActiveElement = document.querySelector(
+    `[data-chat-id="${newChatId}"]`
+  );
   if (newActiveElement) {
     newActiveElement.classList.add("active");
   }
 
   currentChatId = newChatId;
-  currentChatTargetUid = targetUid; 
+  currentChatTargetUid = targetUid;
   currentChatName.innerText = chatName;
 
   startMessagesListener(currentChatId);
@@ -277,34 +294,35 @@ function switchChat(newChatId, chatName, targetUid = null) {
 
 // РЕНДЕР ЭЛЕМЕНТА В СПИСКЕ ЧАТОВ
 function renderChatItem(chatId, chatData) {
-    let chatName;
-    let targetUid = null;
-    
-    if (chatData.type === 'group') {
-        chatName = `[ГР] ${chatData.name || 'Групповой чат'}`;
-    } else {
-        const otherUid = chatData.participants.find(uid => uid !== currentUid);
-        chatName = chatData.participantsNicknames[otherUid] || "Личный чат"; 
-        targetUid = otherUid;
-    }
+  let chatName;
+  let targetUid = null;
 
-    const el = document.createElement("div");
-    el.className = "chat-item dm-item"; 
-    el.setAttribute("data-chat-id", chatId);
-    el.textContent = chatName;
-    el.addEventListener("click", () => switchChat(chatId, chatName, targetUid));
-    chatList.appendChild(el); // <-- Добавление элемента в #chatList
+  if (chatData.type === "group") {
+    chatName = `[ГР] ${chatData.name || "Групповой чат"}`;
+  } else {
+    const otherUid = chatData.participants.find((uid) => uid !== currentUid);
+    chatName = chatData.participantsNicknames[otherUid] || "Личный чат";
+    targetUid = otherUid;
+  }
+
+  const el = document.createElement("div");
+  el.className = "chat-item dm-item";
+  el.setAttribute("data-chat-id", chatId);
+  el.textContent = chatName;
+  el.addEventListener("click", () => switchChat(chatId, chatName, targetUid));
+  chatList.appendChild(el); // <-- Добавление элемента в #chatList
 }
 
-globalChatLink.addEventListener("click", () => switchChat("global", "Общий чат"));
-
+globalChatLink.addEventListener("click", () =>
+  switchChat("global", "Общий чат")
+);
 
 function renderMessage(msg) {
   const el = document.createElement("div");
   el.className = "msg";
-  if (msg.isOwn) { 
-      el.classList.add("own");
-  } 
+  if (msg.isOwn) {
+    el.classList.add("own");
+  }
 
   const meta = document.createElement("div");
   meta.className = "meta";
@@ -412,13 +430,13 @@ async function sendMessage() {
     }
 
     const messageData = {
-        text: text || "",
-        sender: currentNick || "Anon",
-        uid: currentUid, 
-        fileUrl: fileUrl || null,
-        fileType: fileType || null,
-        fileName: fileName || null,
-        timestamp: serverTimestamp(),
+      text: text || "",
+      sender: currentNick || "Anon",
+      uid: currentUid,
+      fileUrl: fileUrl || null,
+      fileType: fileType || null,
+      fileName: fileName || null,
+      timestamp: serverTimestamp(),
     };
 
     if (currentChatId === "global") {
@@ -426,12 +444,16 @@ async function sendMessage() {
     } else {
       const chatMessagesRef = collection(db, `chats/${currentChatId}/messages`);
       await addDoc(chatMessagesRef, messageData);
-      
+
       // Обновляем метку времени чата
-      await setDoc(doc(db, "chats", currentChatId), {
+      await setDoc(
+        doc(db, "chats", currentChatId),
+        {
           updatedAt: serverTimestamp(),
           lastMessage: text || (fileName ? `[Файл: ${fileName}]` : "[Файл]"),
-      }, { merge: true });
+        },
+        { merge: true }
+      );
     }
 
     msgInput.value = "";
@@ -448,190 +470,182 @@ async function sendMessage() {
 
 // Инициализация модального окна
 newChatBtn.addEventListener("click", () => {
-    searchUserModal.style.display = "block";
-    searchResults.innerHTML = "";
-    searchNickname.value = "";
-    groupNameInput.value = "";
-    
-    pendingGroupParticipants = { [currentUid]: currentNick }; 
-    updatePendingParticipantsDisplay();
-    
-    groupNameInput.style.display = "none";
-    groupNameLabel.style.display = "none";
+  searchUserModal.style.display = "block";
+  searchResults.innerHTML = "";
+  searchNickname.value = "";
+  groupNameInput.value = "";
+
+  pendingGroupParticipants = { [currentUid]: currentNick };
+  updatePendingParticipantsDisplay();
+
+  groupNameInput.style.display = "none";
+  groupNameLabel.style.display = "none";
 });
 
 closeSearchModal.addEventListener("click", () => {
-    searchUserModal.style.display = "none";
+  searchUserModal.style.display = "none";
 });
 
 // Обновление списка участников в модальном окне
 function updatePendingParticipantsDisplay() {
-    const nicknames = Object.values(pendingGroupParticipants);
-    const otherNicks = nicknames.filter(nick => nick !== currentNick);
-    
-    let display = `Вы`;
-    if (otherNicks.length > 0) {
-        display += `, ${otherNicks.join(', ')}`;
-    }
-    
-    groupParticipantsDisplay.innerHTML = `Участники: <span style="font-weight: bold;">${display}</span>`;
-    
-    if (Object.keys(pendingGroupParticipants).length > 2) {
-        groupNameInput.style.display = "block";
-        groupNameLabel.style.display = "block";
-    } else {
-        groupNameInput.style.display = "none";
-        groupNameLabel.style.display = "none";
-        groupNameInput.value = "";
-    }
+  const nicknames = Object.values(pendingGroupParticipants);
+  const otherNicks = nicknames.filter((nick) => nick !== currentNick);
+
+  let display = `Вы`;
+  if (otherNicks.length > 0) {
+    display += `, ${otherNicks.join(", ")}`;
+  }
+
+  groupParticipantsDisplay.innerHTML = `Участники: <span style="font-weight: bold;">${display}</span>`;
+
+  if (Object.keys(pendingGroupParticipants).length > 2) {
+    groupNameInput.style.display = "block";
+    groupNameLabel.style.display = "block";
+  } else {
+    groupNameInput.style.display = "none";
+    groupNameLabel.style.display = "none";
+    groupNameInput.value = "";
+  }
 }
 
 // Обновленная функция поиска (теперь для добавления в группу/чат)
 searchUserBtn.addEventListener("click", async () => {
-    const nickname = searchNickname.value.trim();
-    if (!nickname) return (searchResults.innerHTML = "Введите ник.");
-    if (nickname === currentNick) return (searchResults.innerHTML = "Вы уже в чате.");
-    if (Object.values(pendingGroupParticipants).includes(nickname)) {
-        return (searchResults.innerHTML = `Пользователь "${nickname}" уже добавлен.`);
+  const nickname = searchNickname.value.trim();
+  if (!nickname) return (searchResults.innerHTML = "Введите ник.");
+  if (nickname === currentNick)
+    return (searchResults.innerHTML = "Вы уже в чате.");
+  if (Object.values(pendingGroupParticipants).includes(nickname)) {
+    return (searchResults.innerHTML = `Пользователь "${nickname}" уже добавлен.`);
+  }
+
+  searchResults.innerHTML = "Поиск...";
+
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, where("nickname", "==", nickname));
+
+  try {
+    const snap = await getDocs(q);
+    searchResults.innerHTML = "";
+
+    if (snap.empty) {
+      searchResults.innerHTML = `Пользователь с ником "${nickname}" не найден.`;
+      return;
     }
 
-    searchResults.innerHTML = "Поиск...";
-    
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("nickname", "==", nickname));
+    snap.forEach((docSnap) => {
+      const userData = docSnap.data();
+      const targetUid = docSnap.id;
 
-    try {
-        const snap = await getDocs(q);
-        searchResults.innerHTML = "";
+      const addBtn = document.createElement("button");
+      addBtn.textContent = `Добавить ${userData.nickname}`;
+      addBtn.className = "primary";
+      addBtn.style.margin = "5px 0";
+      addBtn.style.backgroundColor = "var(--success-color)";
 
-        if (snap.empty) {
-            searchResults.innerHTML = `Пользователь с ником "${nickname}" не найден.`;
-            return;
-        }
+      addBtn.addEventListener("click", () => {
+        pendingGroupParticipants[targetUid] = userData.nickname;
+        updatePendingParticipantsDisplay();
+        searchResults.innerHTML = `<span style="color: var(--success-color); font-weight: bold;">${userData.nickname} добавлен!</span>`;
+        searchNickname.value = "";
+      });
 
-        snap.forEach((docSnap) => {
-            const userData = docSnap.data();
-            const targetUid = docSnap.id;
-
-            const addBtn = document.createElement("button");
-            addBtn.textContent = `Добавить ${userData.nickname}`;
-            addBtn.className = "primary";
-            addBtn.style.margin = "5px 0";
-            addBtn.style.backgroundColor = "var(--success-color)"; 
-
-            addBtn.addEventListener("click", () => {
-                pendingGroupParticipants[targetUid] = userData.nickname;
-                updatePendingParticipantsDisplay();
-                searchResults.innerHTML = `<span style="color: var(--success-color); font-weight: bold;">${userData.nickname} добавлен!</span>`;
-                searchNickname.value = "";
-            });
-
-            searchResults.appendChild(addBtn);
-        });
-    } catch (e) {
-        searchResults.innerHTML = "Ошибка поиска: " + e.message;
-    }
+      searchResults.appendChild(addBtn);
+    });
+  } catch (e) {
+    searchResults.innerHTML = "Ошибка поиска: " + e.message;
+  }
 });
 
-let isChatListOpen = false;
+// --- ЛОГИКА МОБИЛЬНОЙ НАВИГАЦИИ ---
 
-// 1. Открытие списка чатов (по кнопке-гамбургеру)
+// 1. Открытие списка чатов по кнопке-гамбургеру
 toggleChatListBtn.addEventListener("click", () => {
-    chatListContainer.style.display = 'flex'; // Используйте 'flex' или 'block' в зависимости от вашего CSS
-    isChatListOpen = true;
+  chatListContainer.style.transform = "translateX(0)";
 });
 
 // 2. Закрытие списка чатов (по кнопке "X")
 closeChatListBtn.addEventListener("click", () => {
-    // В мобильном режиме просто скрываем его
-    chatListContainer.style.display = 'none';
-    isChatListOpen = false;
+  chatListContainer.style.transform = "translateX(-100%)";
 });
 
 // 3. Добавление мобильной логики в switchChat
-const originalSwitchChat = switchChat;
-switchChat = (newChatId, chatName, targetUid = null) => {
-    // Выполняем оригинальную функцию переключения
-    originalSwitchChat(newChatId, chatName, targetUid);
+const originalSwitchChat = switchChat; // Сохраняем оригинальную функцию
+window.switchChat = (newChatId, chatName, targetUid = null) => {
+  originalSwitchChat(newChatId, chatName, targetUid); // Выполняем оригинальную логику
 
-    // Если список чатов открыт (только на мобильном устройстве) - закрываем его после выбора
-    if (isChatListOpen && window.innerWidth <= 768) { // 768px - типичный порог для мобильных
-        chatListContainer.style.display = 'none';
-        isChatListOpen = false;
-    }
+  // На мобильных устройствах скрываем панель после выбора чата
+  if (window.innerWidth <= 768) {
+    chatListContainer.style.transform = "translateX(-100%)";
+  }
 };
-
-// 4. Добавление обработчика для глобального чата
-globalChatLink.addEventListener("click", () => {
-    switchChat("global", "Общий чат");
-    // Логика закрытия списка чатов (дублируется в переопределенном switchChat)
-});
-
 
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
 finalizeChatBtn.addEventListener("click", async () => {
-    const participantUids = Object.keys(pendingGroupParticipants);
-    const participantNicks = pendingGroupParticipants;
-    const isGroup = participantUids.length > 2;
-    let chatName = "";
-    
-    if (participantUids.length < 2) {
-        return alert("Выберите хотя бы одного собеседника.");
-    }
-    
-    if (isGroup) {
-        chatName = groupNameInput.value.trim();
-        if (!chatName) return alert("Введите название для группового чата.");
-    }
+  const participantUids = Object.keys(pendingGroupParticipants);
+  const participantNicks = pendingGroupParticipants;
+  const isGroup = participantUids.length > 2;
+  let chatName = "";
 
-    // Логика сортировки для DM
-    let finalParticipantsArray;
-    if (isGroup) {
-        finalParticipantsArray = participantUids;
-    } else {
-        // Для DM массив должен быть отсортирован
-        finalParticipantsArray = participantUids.sort(); 
+  if (participantUids.length < 2) {
+    return alert("Выберите хотя бы одного собеседника.");
+  }
+
+  if (isGroup) {
+    chatName = groupNameInput.value.trim();
+    if (!chatName) return alert("Введите название для группового чата.");
+  }
+
+  // Логика сортировки для DM
+  let finalParticipantsArray;
+  if (isGroup) {
+    finalParticipantsArray = participantUids;
+  } else {
+    // Для DM массив должен быть отсортирован
+    finalParticipantsArray = participantUids.sort();
+  }
+
+  // 1. Ищем существующий чат (только для DM)
+  let chatId = null;
+  if (!isGroup) {
+    const chatsRef = collection(db, "chats");
+    const q = query(
+      chatsRef,
+      where("participants", "==", finalParticipantsArray)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      chatId = snap.docs[0].id;
     }
+  }
 
-    // 1. Ищем существующий чат (только для DM)
-    let chatId = null;
-    if (!isGroup) {
-        const chatsRef = collection(db, "chats");
-        const q = query(chatsRef, where("participants", "==", finalParticipantsArray));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-            chatId = snap.docs[0].id;
-        }
-    }
+  if (!chatId) {
+    // 2. Создаем новый чат
+    const newChatData = {
+      type: isGroup ? "group" : "private",
+      name: isGroup ? chatName : null,
+      participants: finalParticipantsArray,
+      participantsNicknames: participantNicks,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    const newChatRef = await addDoc(collection(db, "chats"), newChatData);
+    chatId = newChatRef.id;
+  }
 
-    if (!chatId) {
-        // 2. Создаем новый чат
-        const newChatData = {
-            type: isGroup ? "group" : "private",
-            name: isGroup ? chatName : null, 
-            participants: finalParticipantsArray, 
-            participantsNicknames: participantNicks,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        };
-        const newChatRef = await addDoc(collection(db, "chats"), newChatData);
-        chatId = newChatRef.id;
-    }
+  // 3. Определяем имя для отображения в заголовке
+  let displayChatName;
+  let targetUid = null;
 
-    // 3. Определяем имя для отображения в заголовке
-    let displayChatName;
-    let targetUid = null;
+  if (isGroup) {
+    displayChatName = `[ГР] ${chatName}`;
+  } else {
+    targetUid = participantUids.find((uid) => uid !== currentUid);
+    displayChatName = participantNicks[targetUid] || "Личный чат";
+  }
 
-    if (isGroup) {
-        displayChatName = `[ГР] ${chatName}`;
-    } else {
-        targetUid = participantUids.find(uid => uid !== currentUid);
-        displayChatName = participantNicks[targetUid] || "Личный чат";
-    }
-
-    // 4. Переключаемся на чат
-    searchUserModal.style.display = "none";
-    switchChat(chatId, displayChatName, targetUid);
+  // 4. Переключаемся на чат
+  searchUserModal.style.display = "none";
+  switchChat(chatId, displayChatName, targetUid);
 });
 
 // app.js (в самый низ файла, заменяя старую логику звонков)
@@ -640,145 +654,162 @@ finalizeChatBtn.addEventListener("click", async () => {
 // --- ЛОГИКА ЗВОНКОВ (WebRTC/FIREBASE) ---
 // --------------------------------------------
 
-const callsRef = collection(db, 'calls');
+const callsRef = collection(db, "calls");
 
 /**
  * 1. Получает доступ к камере/микрофону и отображает локальное видео.
  */
 async function startLocalStream() {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
-        callMessage.innerText = 'Потоки получены. Готов к соединению.';
-        return true;
-    } catch (e) {
-        alert("Не удалось получить доступ к камере или микрофону. Проверьте разрешения.");
-        console.error("Ошибка при получении медиапотоков:", e);
-        callStatus.innerText = 'Ошибка медиапотоков';
-        callMessage.innerText = 'Доступ к камере/микрофону запрещен.';
-        return false;
-    }
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    localVideo.srcObject = localStream;
+    callMessage.innerText = "Потоки получены. Готов к соединению.";
+    return true;
+  } catch (e) {
+    alert(
+      "Не удалось получить доступ к камере или микрофону. Проверьте разрешения."
+    );
+    console.error("Ошибка при получении медиапотоков:", e);
+    callStatus.innerText = "Ошибка медиапотоков";
+    callMessage.innerText = "Доступ к камере/микрофону запрещен.";
+    return false;
+  }
 }
 
 function setupPeerConnection(isCaller) {
-    peerConnection = new RTCPeerConnection({
-        // Использование общедоступных STUN-серверов Google для определения сетевых адресов
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-        ]
-    });
+  peerConnection = new RTCPeerConnection({
+    // Использование общедоступных STUN-серверов Google для определения сетевых адресов
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ],
+  });
 
-    // Добавляем локальные треки в соединение
-    localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-    });
+  // Добавляем локальные треки в соединение
+  localStream.getTracks().forEach((track) => {
+    peerConnection.addTrack(track, localStream);
+  });
 
-    // Обработчик для удаленных треков (видео/аудио собеседника)
-    peerConnection.ontrack = (event) => {
-        if (remoteStream) return;
-        remoteStream = event.streams[0];
-        remoteVideo.srcObject = remoteStream;
-        callStatus.innerText = 'Соединение установлено';
-        callMessage.innerText = 'Разговор начался!';
-    };
+  // Обработчик для удаленных треков (видео/аудио собеседника)
+  peerConnection.ontrack = (event) => {
+    if (remoteStream) return;
+    remoteStream = event.streams[0];
+    remoteVideo.srcObject = remoteStream;
+    callStatus.innerText = "Соединение установлено";
+    callMessage.innerText = "Разговор начался!";
+  };
 
-    // Обновленный обработчик для сбора ICE-кандидатов
-    peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-            const candidate = event.candidate.toJSON();
-            
-            // Определяем коллекцию, куда сохранять НАШИ кандидаты
-            const candidateCollectionName = isCaller ? 'callerCandidates' : 'calleeCandidates';
-            
-            // Используем currentCallId, который уже установлен
-            if (currentCallId) { 
-                 const candidateRef = collection(db, `calls/${currentCallId}/${candidateCollectionName}`);
-                 addDoc(candidateRef, candidate);
-            }
-        }
-    };
+  // Обновленный обработчик для сбора ICE-кандидатов
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      const candidate = event.candidate.toJSON();
 
-    peerConnection.onconnectionstatechange = () => {
-        console.log("Состояние соединения:", peerConnection.connectionState);
-        callMessage.innerText = `Состояние соединения: ${peerConnection.connectionState}`;
-        if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-            // Разъединение: автоматически завершаем звонок
-            if (callModal.style.display !== 'none') {
-                endCall(false, 'Соединение разорвано.');
-            }
-        }
-    };
+      // Определяем коллекцию, куда сохранять НАШИ кандидаты
+      const candidateCollectionName = isCaller
+        ? "callerCandidates"
+        : "calleeCandidates";
+
+      // Используем currentCallId, который уже установлен
+      if (currentCallId) {
+        const candidateRef = collection(
+          db,
+          `calls/${currentCallId}/${candidateCollectionName}`
+        );
+        addDoc(candidateRef, candidate);
+      }
+    }
+  };
+
+  peerConnection.onconnectionstatechange = () => {
+    console.log("Состояние соединения:", peerConnection.connectionState);
+    callMessage.innerText = `Состояние соединения: ${peerConnection.connectionState}`;
+    if (
+      peerConnection.connectionState === "disconnected" ||
+      peerConnection.connectionState === "failed"
+    ) {
+      // Разъединение: автоматически завершаем звонок
+      if (callModal.style.display !== "none") {
+        endCall(false, "Соединение разорвано.");
+      }
+    }
+  };
 }
 /**
  * 3. ИНИЦИАТОР: Запускает звонок.
  */
 callBtn.addEventListener("click", async () => {
-    if (!(await startLocalStream())) return;
+  if (!(await startLocalStream())) return;
 
-    callModal.style.display = 'block';
-    callStatus.innerText = `Звонок пользователю ${currentChatName.innerText}...`;
-    answerCallBtn.style.display = 'none';
-    
-    // ⭐️ ИСПРАВЛЕНИЕ: Создаем документ звонка ПЕРЕД setupPeerConnection
-    // Это нужно, чтобы currentCallId был установлен для сбора локальных кандидатов
-    try {
-        const callDoc = await addDoc(callsRef, {
-            callerUid: currentUid,
-            calleeUid: currentChatTargetUid,
-            offer: null, // Offer будет добавлен ниже
-            status: 'ringing',
-            createdAt: serverTimestamp()
-        });
-        currentCallId = callDoc.id;
-        callMessage.innerText = 'Ожидаем ответа собеседника...';
-        
-        // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = true
-        setupPeerConnection(true);
+  callModal.style.display = "block";
+  callStatus.innerText = `Звонок пользователю ${currentChatName.innerText}...`;
+  answerCallBtn.style.display = "none";
 
-        // Создаем Offer (Предложение)
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
+  // ⭐️ ИСПРАВЛЕНИЕ: Создаем документ звонка ПЕРЕД setupPeerConnection
+  // Это нужно, чтобы currentCallId был установлен для сбора локальных кандидатов
+  try {
+    const callDoc = await addDoc(callsRef, {
+      callerUid: currentUid,
+      calleeUid: currentChatTargetUid,
+      offer: null, // Offer будет добавлен ниже
+      status: "ringing",
+      createdAt: serverTimestamp(),
+    });
+    currentCallId = callDoc.id;
+    callMessage.innerText = "Ожидаем ответа собеседника...";
 
-        // Обновляем документ в Firestore с Offer
-        await updateDoc(doc(callsRef, currentCallId), {
-            offer: {
-                sdp: offer.sdp,
-                type: offer.type,
-            }
-        });
+    // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = true
+    setupPeerConnection(true);
 
-        // ⭐️ НОВЫЙ ШАГ: Инициатор начинает слушать кандидатов от Callee
-        const unsubscribeCalleeCandidates = listenForCandidates('callee');
+    // Создаем Offer (Предложение)
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
 
-        // Слушаем ответ (Answer) от собеседника и его статус
-        unsubscribeCallListener = onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
-            const data = docSnap.data();
+    // Обновляем документ в Firestore с Offer
+    await updateDoc(doc(callsRef, currentCallId), {
+      offer: {
+        sdp: offer.sdp,
+        type: offer.type,
+      },
+    });
 
-            if (!peerConnection) {
-                unsubscribeCalleeCandidates(); // ⭐️ ИСПРАВЛЕНИЕ: Останавливаем слушатель
-                return; 
-            }
+    // ⭐️ НОВЫЙ ШАГ: Инициатор начинает слушать кандидатов от Callee
+    const unsubscribeCalleeCandidates = listenForCandidates("callee");
 
-            if (data && data.answer && !peerConnection.currentRemoteDescription) {
-                console.log("Получен Answer:", data.answer);
-                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                // После установки RemoteDescription WebRTC начнет обмениваться потоками
-            }
-            
-            if (data && data.status === 'accepted') {
-                callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
-            }
-            
-            if (data && data.status === 'rejected') {
-                endCall(true, `${currentChatName.innerText} отклонил звонок.`);
-            }
-        }); 
-        
-    } catch (e) { 
-        console.error("Ошибка при инициации звонка:", e);
-        endCall(false, "Не удалось начать звонок.");
-    }
+    // Слушаем ответ (Answer) от собеседника и его статус
+    unsubscribeCallListener = onSnapshot(
+      doc(callsRef, currentCallId),
+      (docSnap) => {
+        const data = docSnap.data();
+
+        if (!peerConnection) {
+          unsubscribeCalleeCandidates(); // ⭐️ ИСПРАВЛЕНИЕ: Останавливаем слушатель
+          return;
+        }
+
+        if (data && data.answer && !peerConnection.currentRemoteDescription) {
+          console.log("Получен Answer:", data.answer);
+          peerConnection.setRemoteDescription(
+            new RTCSessionDescription(data.answer)
+          );
+          // После установки RemoteDescription WebRTC начнет обмениваться потоками
+        }
+
+        if (data && data.status === "accepted") {
+          callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
+        }
+
+        if (data && data.status === "rejected") {
+          endCall(true, `${currentChatName.innerText} отклонил звонок.`);
+        }
+      }
+    );
+  } catch (e) {
+    console.error("Ошибка при инициации звонка:", e);
+    endCall(false, "Не удалось начать звонок.");
+  }
 });
 /**
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
@@ -786,77 +817,88 @@ callBtn.addEventListener("click", async () => {
 let callOffer = null; // Хранит данные входящего звонка
 
 onAuthStateChanged(auth, (user) => {
-    // ... (существующий код) ...
-    if (user) {
-        // ... (инициализация пользователя) ...
+  // ... (существующий код) ...
+  if (user) {
+    // ... (инициализация пользователя) ...
 
-        // Слушаем входящие звонки, где calleeUid == currentUid
-        onSnapshot(query(callsRef, where('calleeUid', '==', user.uid), where('status', '==', 'ringing')), (snapshot) => {
-            if (snapshot.docs.length > 0 && !currentCallId) {
-                const incomingCallDoc = snapshot.docs[0];
-                callOffer = {
-                    ...incomingCallDoc.data(),
-                    id: incomingCallDoc.id
-                };
-                currentCallId = callOffer.id;
+    // Слушаем входящие звонки, где calleeUid == currentUid
+    onSnapshot(
+      query(
+        callsRef,
+        where("calleeUid", "==", user.uid),
+        where("status", "==", "ringing")
+      ),
+      (snapshot) => {
+        if (snapshot.docs.length > 0 && !currentCallId) {
+          const incomingCallDoc = snapshot.docs[0];
+          callOffer = {
+            ...incomingCallDoc.data(),
+            id: incomingCallDoc.id,
+          };
+          currentCallId = callOffer.id;
 
-                // Показываем модальное окно и кнопку "Принять"
-                callModal.style.display = 'block';
-                callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`;
-                answerCallBtn.style.display = 'inline-block';
-                callMessage.innerText = 'Нажмите "Принять"';
-            }
-        });
-    }
-    // ... (else { ... } код) ...
+          // Показываем модальное окно и кнопку "Принять"
+          callModal.style.display = "block";
+          callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`;
+          answerCallBtn.style.display = "inline-block";
+          callMessage.innerText = 'Нажмите "Принять"';
+        }
+      }
+    );
+  }
+  // ... (else { ... } код) ...
 });
-
 
 /**
  * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
- *//**
+ */ /**
  * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
  */
-answerCallBtn.addEventListener('click', async () => {
-     if (!(await startLocalStream())) return;
-    
-    callStatus.innerText = `Подключение к ${callOffer.callerUid}...`;
-    answerCallBtn.style.display = 'none';
+answerCallBtn.addEventListener("click", async () => {
+  if (!(await startLocalStream())) return;
 
-    // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = false
-    setupPeerConnection(false);
+  callStatus.innerText = `Подключение к ${callOffer.callerUid}...`;
+  answerCallBtn.style.display = "none";
 
-    try {
-        // Устанавливаем Offer, полученный от вызывающего
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(callOffer.offer));
-        
-        // Создаем Answer (Ответ)
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
+  // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = false
+  setupPeerConnection(false);
 
-        // Обновляем документ звонка с Answer и статусом
-        const callDocRef = doc(callsRef, currentCallId);
-        await setDoc(callDocRef, {
-            answer: {
-                sdp: answer.sdp,
-                type: answer.type
-            },
-            status: 'accepted'
-        }, { merge: true }); 
-        callStatus.innerText = 'Соединение устанавливается...';
+  try {
+    // Устанавливаем Offer, полученный от вызывающего
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(callOffer.offer)
+    );
 
-        // ⭐️ НОВЫЙ ШАГ: Принимающая сторона начинает слушать кандидатов от Caller
-        const unsubscribeCallerCandidates = listenForCandidates('caller'); 
+    // Создаем Answer (Ответ)
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
 
-        // ⭐️ ИСПРАВЛЕНИЕ: Добавляем слушатель, чтобы его можно было остановить
-        unsubscribeCallListener = () => {
-            unsubscribeCallerCandidates();
-        };
+    // Обновляем документ звонка с Answer и статусом
+    const callDocRef = doc(callsRef, currentCallId);
+    await setDoc(
+      callDocRef,
+      {
+        answer: {
+          sdp: answer.sdp,
+          type: answer.type,
+        },
+        status: "accepted",
+      },
+      { merge: true }
+    );
+    callStatus.innerText = "Соединение устанавливается...";
 
-    } catch (e) {
-        console.error("Ошибка при приеме звонка:", e);
-        endCall(true, "Не удалось принять звонок.");
-    }
+    // ⭐️ НОВЫЙ ШАГ: Принимающая сторона начинает слушать кандидатов от Caller
+    const unsubscribeCallerCandidates = listenForCandidates("caller");
+
+    // ⭐️ ИСПРАВЛЕНИЕ: Добавляем слушатель, чтобы его можно было остановить
+    unsubscribeCallListener = () => {
+      unsubscribeCallerCandidates();
+    };
+  } catch (e) {
+    console.error("Ошибка при приеме звонка:", e);
+    endCall(true, "Не удалось принять звонок.");
+  }
 });
 /**
  * 6. Общая функция для прослушивания ICE-кандидатов.
@@ -865,73 +907,77 @@ answerCallBtn.addEventListener('click', async () => {
  * 6. Общая функция для прослушивания ICE-кандидатов.
  */
 function listenForCandidates(type) {
-    // Если мы Callee (принимающая сторона), мы слушаем 'callerCandidates'.
-    // Если мы Caller (инициатор), мы слушаем 'calleeCandidates'.
-    const candidateType = (type === 'caller' ? 'callerCandidates' : 'calleeCandidates');
-    const candidatesRef = collection(db, `calls/${currentCallId}/${candidateType}`);
-    
-    // Используем новую переменную-слушатель, чтобы иметь возможность ее остановить
-    return onSnapshot(candidatesRef, (snapshot) => { 
-        snapshot.docChanges().forEach(async (change) => {
-            if (change.type === 'added' && peerConnection) {
-                const candidate = change.doc.data();
-                try {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                    console.log(`ICE-кандидат (${type}) успешно добавлен.`);
-                } catch (e) {
-                    console.error("Ошибка при добавлении ICE-кандидата:", e);
-                }
-            }
-        });
+  // Если мы Callee (принимающая сторона), мы слушаем 'callerCandidates'.
+  // Если мы Caller (инициатор), мы слушаем 'calleeCandidates'.
+  const candidateType =
+    type === "caller" ? "callerCandidates" : "calleeCandidates";
+  const candidatesRef = collection(
+    db,
+    `calls/${currentCallId}/${candidateType}`
+  );
+
+  // Используем новую переменную-слушатель, чтобы иметь возможность ее остановить
+  return onSnapshot(candidatesRef, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "added" && peerConnection) {
+        const candidate = change.doc.data();
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          console.log(`ICE-кандидат (${type}) успешно добавлен.`);
+        } catch (e) {
+          console.error("Ошибка при добавлении ICE-кандидата:", e);
+        }
+      }
     });
+  });
 }
 
 /**
  * 7. Завершает звонок.
  */
-hangupCallBtn.addEventListener('click', () => {
-    endCall(true, "Вы завершили звонок.");
+hangupCallBtn.addEventListener("click", () => {
+  endCall(true, "Вы завершили звонок.");
 });
 
 async function endCall(updateStatus, message) {
-    // 1. Закрываем WebRTC
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-    }
-    
-    // 2. Останавливаем локальные потоки
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-    }
+  // 1. Закрываем WebRTC
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
 
-    // 3. Сброс видеоэлементов
-    localVideo.srcObject = null;
-    remoteVideo.srcObject = null;
-    remoteStream = null;
+  // 2. Останавливаем локальные потоки
+  if (localStream) {
+    localStream.getTracks().forEach((track) => track.stop());
+    localStream = null;
+  }
 
-    if (updateStatus && currentCallId) {
-        try {
-            const callDocRef = doc(callsRef, currentCallId);
-            await setDoc(callDocRef, { status: 'ended' }, { merge: true });
-        } catch (e) {
-             console.warn("Не удалось обновить статус звонка в Firestore:", e);
-        }
+  // 3. Сброс видеоэлементов
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  remoteStream = null;
+
+  if (updateStatus && currentCallId) {
+    try {
+      const callDocRef = doc(callsRef, currentCallId);
+      await setDoc(callDocRef, { status: "ended" }, { merge: true });
+    } catch (e) {
+      console.warn("Не удалось обновить статус звонка в Firestore:", e);
     }
-    
-    // 5. Очищаем переменные состояния
-     if (unsubscribeCallListener) {
-        unsubscribeCallListener();
-        unsubscribeCallListener = null;
-    }
+  }
 
-    currentCallId = null;
-    callOffer = null;
+  // 5. Очищаем переменные состояния
+  if (unsubscribeCallListener) {
+    unsubscribeCallListener();
+    unsubscribeCallListener = null;
+  }
 
-    // 6. Скрываем модальное окно и показываем сообщение
-    alert(message || "Звонок завершен.");
-    callModal.style.display = 'none';
-    callStatus.innerText = 'Ожидание звонка...';
-    callMessage.innerText = '';
+  currentCallId = null;
+  callOffer = null;
+
+  // 6. Скрываем модальное окно и показываем сообщение
+  alert(message || "Звонок завершен.");
+  callModal.style.display = "none";
+  callStatus.innerText = "Ожидание звонка...";
+  callMessage.innerText = "";
 }
