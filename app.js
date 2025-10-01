@@ -94,6 +94,7 @@ const callMessage = document.getElementById("callMessage");
 
 // --- НОВЫЕ Глобальные Переменные для WebRTC ---
 let peerConnection = null;
+let unsubscribeCallListener = null; // <-- НОВАЯ ПЕРЕМЕННАЯ
 let localStream = null;
 let remoteStream = null;
 let currentCallId = null; // ID документа в коллекции calls
@@ -714,29 +715,28 @@ callBtn.addEventListener("click", async () => {
 
         // Слушаем ответ (Answer) от собеседника
         onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
-            const data = docSnap.data();
-            if (data && data.answer && !peerConnection.currentRemoteDescription) {
-                console.log("Получен Answer:", data.answer);
-                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            }
-            if (data && data.status === 'accepted') {
-                callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
-            }
-            if (data && data.status === 'rejected') {
-                endCall(true, `${currentChatName.innerText} отклонил звонок.`);
-            }
-        });
-        
-        // Начинаем слушать ICE-кандидатов от собеседника (callee)
-        listenForCandidates('callee');
+    const data = docSnap.data();
 
-    } catch (e) {
-        console.error("Ошибка при инициировании звонка:", e);
-        endCall(true, "Не удалось инициировать звонок.");
+    // ⭐️ ИСПРАВЛЕНИЕ #1: Добавляем проверку peerConnection
+    if (!peerConnection) {
+        return; 
+    }
+
+    if (data && data.answer && !peerConnection.currentRemoteDescription) {
+        console.log("Получен Answer:", data.answer);
+        peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+    }
+    
+    // ⭐️ ИСПРАВЛЕНИЕ #2: Проверяем peerConnection и при обработке статусов
+    if (data && data.status === 'accepted' && peerConnection) {
+        callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
+    }
+    
+    // Это уже было корректно
+    if (data && data.status === 'rejected') {
+        endCall(true, `${currentChatName.innerText} отклонил звонок.`);
     }
 });
-
-
 /**
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
  */
@@ -851,7 +851,6 @@ async function endCall(updateStatus, message) {
     remoteVideo.srcObject = null;
     remoteStream = null;
 
-    // 4. Обновляем статус в Firestore (если нужно)
     if (updateStatus && currentCallId) {
         try {
             const callDocRef = doc(callsRef, currentCallId);
@@ -862,6 +861,11 @@ async function endCall(updateStatus, message) {
     }
     
     // 5. Очищаем переменные состояния
+     if (unsubscribeCallListener) {
+        unsubscribeCallListener();
+        unsubscribeCallListener = null;
+    }
+
     currentCallId = null;
     callOffer = null;
 
@@ -870,4 +874,5 @@ async function endCall(updateStatus, message) {
     callModal.style.display = 'none';
     callStatus.innerText = 'Ожидание звонка...';
     callMessage.innerText = '';
+}
 }
