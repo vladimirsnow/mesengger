@@ -1,5 +1,6 @@
 // ---------- Конфиг Firebase ----------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+
 import {
   getFirestore,
   collection,
@@ -15,23 +16,28 @@ import {
   getDocs,
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-// ИСПРАВЛЕНИЕ: Добавлен импорт getAuth
+
 import {
-  getAuth, // <--- ЭТОГО НЕ ХВАТАЛО
+  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-
 const firebaseConfig = {
-  // ... (остальной конфиг)
+  apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
+  authDomain: "messenger-3f86f.firebaseapp.com",
+  projectId: "messenger-3f86f",
+  storageBucket: "messenger-3f86f.appspot.com",
+  messagingSenderId: "205110361755",
+  appId: "1:205110361755:web:be6c1487ac041bba7f903e",
+  measurementId: "G-XFRCVYP9XK",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Теперь getAuth определен
+const auth = getAuth(app);
 
 // ---------- Конфиг Cloudinary ----------
 const cloudName = "du5qgenm4";
