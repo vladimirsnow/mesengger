@@ -80,7 +80,7 @@ let currentUid = null;
 let pendingFile = null;
 
 let currentChatId = "global";
-let currentChatTargetUid = null; // UID собеседника для DM
+let currentChatTargetUid = null; 
 
 // Состояние для создания группы/чата
 let pendingGroupParticipants = {}; // {uid: nickname, ...}
@@ -103,6 +103,7 @@ logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
 });
 
+// ИЗМЕНЕНИЕ: Убеждаемся, что все инициализировано перед запуском слушателей
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUid = user.uid;
@@ -113,10 +114,11 @@ onAuthStateChanged(auth, async (user) => {
       : user.email;
       
     welcome.innerText = "Привет, " + currentNick;
-    currentNickDisplay.innerText = currentNick; // Обновляем ник в модальном окне
+    currentNickDisplay.innerText = currentNick; 
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
     
+    // Сначала переключаем, потом начинаем слушать чаты
     switchChat("global", "Общий чат"); 
     startChatsListener();
 
@@ -190,22 +192,34 @@ function stopMessagesListener() {
 
 // ФУНКЦИЯ ПРОСЛУШИВАНИЯ СПИСКА ЧАТОВ (DM и ГРУПП)
 function startChatsListener() {
-  if (!currentUid) return;
-  // Запрос: найти все чаты, где текущий UID есть в массиве участников
+  if (!currentUid) {
+      console.log("startChatsListener: currentUid не установлен. Прерываю.");
+      return;
+  }
+
   const q = query(
     collection(db, "chats"),
     where("participants", "array-contains", currentUid),
     orderBy("updatedAt", "desc") 
   );
 
+  console.log("startChatsListener: Подписка на список чатов активна для UID:", currentUid);
+
   unsubscribeChats = onSnapshot(q, (snap) => {
-    // Удаляем только DM и группы (элементы с классом .dm-item)
+    // Удаляем все элементы, добавленные через renderChatItem (они имеют класс .dm-item)
     chatList.querySelectorAll(".dm-item").forEach(el => el.remove()); 
     
+    let count = 0;
     snap.forEach((docSnap) => {
       if (docSnap.id === "global") return; 
       renderChatItem(docSnap.id, docSnap.data());
+      count++;
     });
+    console.log(`startChatsListener: Получено и отрисовано ${count} DM/групповых чатов.`);
+  }, (error) => {
+      // Это отладочный блок для выявления проблем с правилами безопасности Firestore
+      console.error("startChatsListener: Ошибка Firestore:", error);
+      alert("Не удалось загрузить список чатов. Проверьте консоль разработчика (F12)!");
   });
 }
 
@@ -216,7 +230,7 @@ function stopChatsListener() {
   }
 }
 
-// ПЕРЕКЛЮЧЕНИЕ АКТИВНОГО ЧАТА (Обновлено для групп)
+// ПЕРЕКЛЮЧЕНИЕ АКТИВНОГО ЧАТА
 function switchChat(newChatId, chatName, targetUid = null) {
   
   document.querySelectorAll(".chat-item").forEach(el => el.classList.remove("active"));
@@ -236,28 +250,25 @@ function switchChat(newChatId, chatName, targetUid = null) {
   callBtn.style.display = targetUid ? "inline-block" : "none";
 }
 
-// РЕНДЕР ЭЛЕМЕНТА В СПИСКЕ ЧАТОВ (Обновлено для групп)
+// РЕНДЕР ЭЛЕМЕНТА В СПИСКЕ ЧАТОВ
 function renderChatItem(chatId, chatData) {
     let chatName;
     let targetUid = null;
     
     if (chatData.type === 'group') {
-        // Для группы используем заданное имя
         chatName = `[ГР] ${chatData.name || 'Групповой чат'}`;
     } else {
-        // Для DM (private) используем имя собеседника
-        // У DM-чатов массив participants всегда отсортирован
         const otherUid = chatData.participants.find(uid => uid !== currentUid);
         chatName = chatData.participantsNicknames[otherUid] || "Личный чат"; 
         targetUid = otherUid;
     }
 
     const el = document.createElement("div");
-    el.className = "chat-item dm-item";
+    el.className = "chat-item dm-item"; 
     el.setAttribute("data-chat-id", chatId);
     el.textContent = chatName;
     el.addEventListener("click", () => switchChat(chatId, chatName, targetUid));
-    chatList.appendChild(el);
+    chatList.appendChild(el); // <-- Добавление элемента в #chatList
 }
 
 globalChatLink.addEventListener("click", () => switchChat("global", "Общий чат"));
@@ -339,7 +350,7 @@ sendBtn.addEventListener("click", async () => {
   await sendMessage();
 });
 
-// ОБНОВЛЕННАЯ ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ
+// ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ (Обновляет updated At в DM/группах)
 async function sendMessage() {
   const text = msgInput.value.trim();
   if (!text && !pendingFile) return;
@@ -391,7 +402,7 @@ async function sendMessage() {
       const chatMessagesRef = collection(db, `chats/${currentChatId}/messages`);
       await addDoc(chatMessagesRef, messageData);
       
-      // Обновляем метку времени чата и последнее сообщение
+      // Обновляем метку времени чата
       await setDoc(doc(db, "chats", currentChatId), {
           updatedAt: serverTimestamp(),
           lastMessage: text || (fileName ? `[Файл: ${fileName}]` : "[Файл]"),
@@ -417,7 +428,6 @@ newChatBtn.addEventListener("click", () => {
     searchNickname.value = "";
     groupNameInput.value = "";
     
-    // Сброс и установка текущего пользователя в качестве первого участника
     pendingGroupParticipants = { [currentUid]: currentNick }; 
     updatePendingParticipantsDisplay();
     
@@ -432,7 +442,6 @@ closeSearchModal.addEventListener("click", () => {
 // Обновление списка участников в модальном окне
 function updatePendingParticipantsDisplay() {
     const nicknames = Object.values(pendingGroupParticipants);
-    // Фильтруем ник текущего пользователя для отображения
     const otherNicks = nicknames.filter(nick => nick !== currentNick);
     
     let display = `Вы`;
@@ -442,17 +451,15 @@ function updatePendingParticipantsDisplay() {
     
     groupParticipantsDisplay.innerHTML = `Участники: <span style="font-weight: bold;">${display}</span>`;
     
-    // Показываем поля для имени группы, если участников > 2
     if (Object.keys(pendingGroupParticipants).length > 2) {
         groupNameInput.style.display = "block";
         groupNameLabel.style.display = "block";
     } else {
         groupNameInput.style.display = "none";
         groupNameLabel.style.display = "none";
-        groupNameInput.value = ""; // Очищаем имя группы для DM
+        groupNameInput.value = "";
     }
 }
-
 
 // Обновленная функция поиска (теперь для добавления в группу/чат)
 searchUserBtn.addEventListener("click", async () => {
@@ -485,7 +492,7 @@ searchUserBtn.addEventListener("click", async () => {
             addBtn.textContent = `Добавить ${userData.nickname}`;
             addBtn.className = "primary";
             addBtn.style.margin = "5px 0";
-            addBtn.style.backgroundColor = "var(--success-color)"; // Новый цвет для кнопки добавления
+            addBtn.style.backgroundColor = "var(--success-color)"; 
 
             addBtn.addEventListener("click", () => {
                 pendingGroupParticipants[targetUid] = userData.nickname;
@@ -518,21 +525,19 @@ finalizeChatBtn.addEventListener("click", async () => {
         if (!chatName) return alert("Введите название для группового чата.");
     }
 
-    // --- ИСПРАВЛЕНИЕ: Гарантируем, что массив DM всегда отсортирован ---
+    // Логика сортировки для DM
     let finalParticipantsArray;
     if (isGroup) {
-        finalParticipantsArray = participantUids; // Unsorted array for groups
+        finalParticipantsArray = participantUids;
     } else {
-        // Для DM, массив должен быть отсортирован для надежной проверки дубликатов
+        // Для DM массив должен быть отсортирован
         finalParticipantsArray = participantUids.sort(); 
     }
-    // ------------------------------------------------------------------
 
     // 1. Ищем существующий чат (только для DM)
     let chatId = null;
     if (!isGroup) {
         const chatsRef = collection(db, "chats");
-        // Используем отсортированный массив для поиска существующего DM
         const q = query(chatsRef, where("participants", "==", finalParticipantsArray));
         const snap = await getDocs(q);
         if (!snap.empty) {
@@ -545,7 +550,7 @@ finalizeChatBtn.addEventListener("click", async () => {
         const newChatData = {
             type: isGroup ? "group" : "private",
             name: isGroup ? chatName : null, 
-            participants: finalParticipantsArray, // <-- ИСПОЛЬЗУЕМ ОТСОРТИРОВАННЫЙ МАССИВ ДЛЯ DM
+            participants: finalParticipantsArray, 
             participantsNicknames: participantNicks,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -561,7 +566,6 @@ finalizeChatBtn.addEventListener("click", async () => {
     if (isGroup) {
         displayChatName = `[ГР] ${chatName}`;
     } else {
-        // Для DM: имя собеседника
         targetUid = participantUids.find(uid => uid !== currentUid);
         displayChatName = participantNicks[targetUid] || "Личный чат";
     }
