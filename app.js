@@ -182,7 +182,8 @@ registerBtn.addEventListener("click", async () => {
       createdAt: serverTimestamp(),
     });
 
-    alert("Регистрация успешна! Теперь войди.");
+    // Убираем alert и позволяем onAuthStateChanged автоматически войти в систему.
+    // Firebase автоматически вызовет onAuthStateChanged с новым пользователем.
   } catch (e) {
     alert("Ошибка регистрации: " + e.message);
   }
