@@ -52,7 +52,6 @@ const emailIn = document.getElementById("email");
 const passIn = document.getElementById("password");
 const nicknameIn = document.getElementById("nickname");
 const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
 const welcome = document.getElementById("welcome");
 const messagesDiv = document.getElementById("messages");
 const msgInput = document.getElementById("messageInput");
@@ -139,7 +138,6 @@ onAuthStateChanged(auth, async (user) => {
       ? udoc.data().nickname || user.email
       : user.email;
 
-    welcome.innerText = "Привет, " + currentNick;
     currentNickDisplay.innerText = currentNick;
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
