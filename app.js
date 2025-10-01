@@ -1,6 +1,7 @@
 // ---------- Конфиг Firebase ----------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
+// Импорт всех функций Firestore
 import {
   getFirestore,
   collection,
@@ -17,6 +18,7 @@ import {
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+// Импорт всех функций Authentication
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -28,7 +30,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
   authDomain: "messenger-3f86f.firebaseapp.com",
-  projectId: "messenger-3f86f",
+  projectId: "messenger-3f86f", // Проверяем наличие projectId
   storageBucket: "messenger-3f86f.appspot.com",
   messagingSenderId: "205110361755",
   appId: "1:205110361755:web:be6c1487ac041bba7f903e",
