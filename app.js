@@ -136,11 +136,12 @@ onAuthStateChanged(auth, async (user) => {
       ? udoc.data().nickname || user.email
       : user.email;
 
+    // 1. СНАЧАЛА делаем чат видимым
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
 
-    // Сначала переключаем, потом начинаем слушать чаты
-    switchChat("global", "Общий чат");
+    // 2. ПОТОМ переключаемся на чат и запускаем слушатели
+    window.switchChat("global", "Общий чат");
     startChatsListener();
 
     // Слушаем входящие звонки, где calleeUid == currentUid
@@ -276,6 +277,9 @@ function stopChatsListener() {
 
 // ПЕРЕКЛЮЧЕНИЕ АКТИВНОГО ЧАТА
 function switchChat(newChatId, chatName, targetUid = null) {
+  // Получаем элемент заголовка чата здесь, чтобы он гарантированно был в DOM
+  const currentChatName = document.getElementById("currentChatName");
+
   document
     .querySelectorAll(".chat-item")
     .forEach((el) => el.classList.remove("active"));
@@ -317,12 +321,6 @@ function renderChatItem(chatId, chatData) {
   el.addEventListener("click", () => switchChat(chatId, chatName, targetUid));
   chatList.appendChild(el); // <-- Добавление элемента в #chatList
 }
-
-globalChatLink.addEventListener("click", (e) => {
-  e.preventDefault();
-  // Используем глобальную функцию window.switchChat, чтобы мобильная логика тоже работала
-  window.switchChat("global", "Общий чат");
-});
 
 function renderMessage(msg) {
   const el = document.createElement("div");
@@ -590,6 +588,12 @@ window.switchChat = (newChatId, chatName, targetUid = null) => {
   }
 };
 
+// Обработчик для "Общего чата" нужно вешать ПОСЛЕ определения window.switchChat
+globalChatLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  window.switchChat("global", "Общий чат");
+});
+
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
 finalizeChatBtn.addEventListener("click", async () => {
   const participantUids = Object.keys(pendingGroupParticipants);
@@ -656,7 +660,7 @@ finalizeChatBtn.addEventListener("click", async () => {
 
   // 4. Переключаемся на чат
   searchUserModal.style.display = "none";
-  switchChat(chatId, displayChatName, targetUid);
+  window.switchChat(chatId, displayChatName, targetUid);
 });
 
 // app.js (в самый низ файла, заменяя старую логику звонков)
