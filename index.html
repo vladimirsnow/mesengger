@@ -47,7 +47,7 @@
                 </div>
                 
                 <h3>Чаты</h3>
-                <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Начать новый чат</button>
+                <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Создать новый чат</button>
                 <div id="chatList">
                     <div class="chat-item active" id="globalChatLink" data-chat-id="global">Общий чат</div>
                     </div>
@@ -82,13 +82,26 @@
        
     <div id="searchUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100;">
         <div style="background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; margin: 100px auto; ">
-            <h4>Начать чат с пользователем</h4>
+            <h4>Создание чата</h4>
+            
+            <label for="groupNameInput" style="margin-bottom: 5px; font-size: 0.9em;" id="groupNameLabel">Название группы:</label>
+            <input id="groupNameInput" type="text" placeholder="Введите название группы" style="margin-bottom: 8px; display: none;">
+
             <div class="row" style="margin-bottom: 8px;">
-                <input id="searchNickname" type="text" placeholder="Введите ник пользователя" style="flex: 1;"/>
+                <input id="searchNickname" type="text" placeholder="Введите ник пользователя для добавления" style="flex: 1;"/>
                 <button id="searchUserBtn" class="primary">Найти</button>
             </div>
-            <div id="searchResults" style="margin-bottom: 10px; min-height: 50px; border: 1px solid #ddd; padding: 5px; border-radius: 6px;"></div>
-            <button id="closeSearchModal" style="width: 100%;">Закрыть</button>
+            
+            <div id="searchResults" style="margin-bottom: 10px; min-height: 30px; border: 1px solid #ddd; padding: 5px; border-radius: 6px; font-size: 0.9em;"></div>
+            
+            <div id="selectedUsersList" style="margin-bottom: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; background: #f9f9f9; font-size: 0.9em;">
+                Участники: <span id="groupParticipantsDisplay" style="font-weight: bold;">Вы (<span id="currentNickDisplay"></span>)</span>
+            </div>
+
+            <div class="controls" style="gap: 10px;">
+                <button id="finalizeChatBtn" class="primary" style="flex: 1;">Начать чат (1:1 или Группа)</button>
+                <button id="closeSearchModal" style="flex: 1;">Закрыть</button>
+            </div>
         </div>
     </div>
     
