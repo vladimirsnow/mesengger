@@ -147,6 +147,10 @@ onAuthStateChanged(auth, async (user) => {
     // Сначала переключаем, потом начинаем слушать чаты
     switchChat("global", "Общий чат");
     startChatsListener();
+
+    // Слушаем входящие звонки, где calleeUid == currentUid
+    // Этот код был в отдельном onAuthStateChanged, переносим его сюда.
+    listenForIncomingCalls(user.uid);
   } else {
     currentNick = "";
     currentUid = null;
@@ -155,6 +159,11 @@ onAuthStateChanged(auth, async (user) => {
     messagesDiv.innerHTML = "";
     stopMessagesListener();
     stopChatsListener();
+
+    // При выходе из системы останавливаем прослушивание звонков
+    if (unsubscribeCallListener) {
+      unsubscribeCallListener();
+    }
   }
 });
 
@@ -314,9 +323,11 @@ function renderChatItem(chatId, chatData) {
   chatList.appendChild(el); // <-- Добавление элемента в #chatList
 }
 
-globalChatLink.addEventListener("click", () =>
-  switchChat("global", "Общий чат")
-);
+globalChatLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  // Используем глобальную функцию window.switchChat, чтобы мобильная логика тоже работала
+  window.switchChat("global", "Общий чат");
+});
 
 function renderMessage(msg) {
   const el = document.createElement("div");
@@ -816,39 +827,37 @@ callBtn.addEventListener("click", async () => {
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
  */
 let callOffer = null; // Хранит данные входящего звонка
+let unsubscribeIncomingCalls = null;
 
-onAuthStateChanged(auth, (user) => {
-  // ... (существующий код) ...
-  if (user) {
-    // ... (инициализация пользователя) ...
-
-    // Слушаем входящие звонки, где calleeUid == currentUid
-    onSnapshot(
-      query(
-        callsRef,
-        where("calleeUid", "==", user.uid),
-        where("status", "==", "ringing")
-      ),
-      (snapshot) => {
-        if (snapshot.docs.length > 0 && !currentCallId) {
-          const incomingCallDoc = snapshot.docs[0];
-          callOffer = {
-            ...incomingCallDoc.data(),
-            id: incomingCallDoc.id,
-          };
-          currentCallId = callOffer.id;
-
-          // Показываем модальное окно и кнопку "Принять"
-          callModal.style.display = "block";
-          callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`;
-          answerCallBtn.style.display = "inline-block";
-          callMessage.innerText = 'Нажмите "Принять"';
-        }
-      }
-    );
+function listenForIncomingCalls(uid) {
+  // Останавливаем предыдущий слушатель, если он был
+  if (unsubscribeIncomingCalls) {
+    unsubscribeIncomingCalls();
   }
-  // ... (else { ... } код) ...
-});
+
+  const q = query(
+    callsRef,
+    where("calleeUid", "==", uid),
+    where("status", "==", "ringing")
+  );
+
+  unsubscribeIncomingCalls = onSnapshot(q, (snapshot) => {
+    if (snapshot.docs.length > 0 && !currentCallId) {
+      const incomingCallDoc = snapshot.docs[0];
+      callOffer = {
+        ...incomingCallDoc.data(),
+        id: incomingCallDoc.id,
+      };
+      currentCallId = callOffer.id;
+
+      // Показываем модальное окно и кнопку "Принять"
+      callModal.style.display = "block";
+      callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`;
+      answerCallBtn.style.display = "inline-block";
+      callMessage.innerText = 'Нажмите "Принять"';
+    }
+  });
+}
 
 /**
  * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
