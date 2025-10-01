@@ -115,6 +115,33 @@ registerBtn.addEventListener("click", async () => {
   }
 });
 
+const nicknameIn = document.getElementById("nickname");
+
+registerBtn.addEventListener("click", async () => {
+  const email = emailIn.value.trim();
+  const password = passIn.value;
+  const nickname = nicknameIn.value.trim();
+
+  if (!email || !password || !nickname) {
+    return alert("Заполни email, пароль и ник!");
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    // создаём документ в коллекции users
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      email: email,
+      nickname: nickname,
+      createdAt: serverTimestamp(),
+    });
+
+    alert("Регистрация успешна! Теперь войди.");
+  } catch (e) {
+    alert("Ошибка регистрации: " + e.message);
+  }
+});
+
 
 let unsubscribe = null;
 function startMessagesListener() {
