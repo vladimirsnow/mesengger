@@ -74,6 +74,25 @@ const groupParticipantsDisplay = document.getElementById("groupParticipantsDispl
 const currentNickDisplay = document.getElementById("currentNickDisplay");
 const finalizeChatBtn = document.getElementById("finalizeChatBtn");
 
+// --- НОВЫЕ Элементы для Звонков WebRTC ---
+const callModal = document.getElementById("callModal");
+const callStatus = document.getElementById("callStatus");
+const remoteVideo = document.getElementById("remoteVideo");
+const localVideo = document.getElementById("localVideo");
+const answerCallBtn = document.getElementById("answerCallBtn");
+const hangupCallBtn = document.getElementById("hangupCallBtn");
+const callMessage = document.getElementById("callMessage");
+// ----------------------------------------
+
+
+
+
+// --- НОВЫЕ Глобальные Переменные для WebRTC ---
+let peerConnection = null;
+let localStream = null;
+let remoteStream = null;
+let currentCallId = null; // ID документа в коллекции calls
+// ---------------------------------------------
 
 let currentNick = "";
 let currentUid = null;
@@ -575,14 +594,269 @@ finalizeChatBtn.addEventListener("click", async () => {
     switchChat(chatId, displayChatName, targetUid);
 });
 
+// app.js (в самый низ файла, заменяя старую логику звонков)
 
-// ---------- ЛОГИКА ЗВОНКОВ (Без изменений) ----------
+// --------------------------------------------
+// --- ЛОГИКА ЗВОНКОВ (WebRTC/FIREBASE) ---
+// --------------------------------------------
 
-callBtn.addEventListener("click", () => {
-    if (currentChatTargetUid) {
-        alert(`Звонок пользователю "${currentChatName.innerText}" (UID: ${currentChatTargetUid}) инициирован.\n\nПРИМЕЧАНИЕ: Для полноценной работы звонков требуется полная реализация WebRTC (RTCPeerConnection, обмен Offer/Answer/ICE) с использованием Firebase как сервера сигнализации. Эта кнопка пока выполняет только демонстрационную функцию.`);
+const callsRef = collection(db, 'calls');
+
+/**
+ * 1. Получает доступ к камере/микрофону и отображает локальное видео.
+ */
+async function startLocalStream() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+        callMessage.innerText = 'Потоки получены. Готов к соединению.';
+        return true;
+    } catch (e) {
+        alert("Не удалось получить доступ к камере или микрофону. Проверьте разрешения.");
+        console.error("Ошибка при получении медиапотоков:", e);
+        callStatus.innerText = 'Ошибка медиапотоков';
+        callMessage.innerText = 'Доступ к камере/микрофону запрещен.';
+        return false;
+    }
+}
+
+/**
+ * 2. Инициализирует RTCPeerConnection и настраивает обработчики событий.
+ */
+function setupPeerConnection() {
+    peerConnection = new RTCPeerConnection({
+        // Использование общедоступных STUN-серверов Google для определения сетевых адресов
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+    });
+
+    // Добавляем локальные треки в соединение
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    // Обработчик для удаленных треков (видео/аудио собеседника)
+    peerConnection.ontrack = (event) => {
+        if (remoteStream) return;
+        remoteStream = event.streams[0];
+        remoteVideo.srcObject = remoteStream;
+        callStatus.innerText = 'Соединение установлено';
+        callMessage.innerText = 'Разговор начался!';
+    };
+
+    // Обработчик для сбора ICE-кандидатов (сетевые адреса)
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            // Отправляем кандидата в Firestore, чтобы собеседник его увидел
+            const candidate = event.candidate.toJSON();
+            const candidateRef = collection(db, `calls/${currentCallId}/candidates/${currentUid === callOffer.callerUid ? 'caller' : 'callee'}`);
+            addDoc(candidateRef, candidate);
+        }
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+        console.log("Состояние соединения:", peerConnection.connectionState);
+        callMessage.innerText = `Состояние соединения: ${peerConnection.connectionState}`;
+        if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+            // Разъединение: автоматически завершаем звонок
+            if (callModal.style.display !== 'none') {
+                 endCall(false, 'Соединение разорвано.');
+            }
+        }
+    };
+}
+
+
+/**
+ * 3. ИНИЦИАТОР (CALLER): Запускает звонок.
+ */
+callBtn.addEventListener("click", async () => {
+    if (!currentChatTargetUid) {
+        return alert("Звонки доступны только в личных (1:1) чатах.");
+    }
+    
+    if (!(await startLocalStream())) return;
+
+    callModal.style.display = 'block';
+    callStatus.innerText = `Звонок пользователю ${currentChatName.innerText}...`;
+    answerCallBtn.style.display = 'none';
+
+    setupPeerConnection();
+
+    try {
+        // Создаем Offer (Предложение)
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        // Создаем новый документ для сигнализации в Firestore
+        const callDoc = await addDoc(callsRef, {
+            callerUid: currentUid,
+            calleeUid: currentChatTargetUid,
+            offer: {
+                sdp: offer.sdp,
+                type: offer.type,
+            },
+            status: 'ringing', // Статус: звонит
+            createdAt: serverTimestamp()
+        });
+        currentCallId = callDoc.id;
+        callMessage.innerText = 'Ожидаем ответа собеседника...';
+
+        // Слушаем ответ (Answer) от собеседника
+        onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
+            const data = docSnap.data();
+            if (data && data.answer && !peerConnection.currentRemoteDescription) {
+                console.log("Получен Answer:", data.answer);
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+            if (data && data.status === 'accepted') {
+                callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
+            }
+            if (data && data.status === 'rejected') {
+                endCall(true, `${currentChatName.innerText} отклонил звонок.`);
+            }
+        });
         
-    } else {
-        alert("Ошибка: Не удалось найти собеседника для звонка. Звонки доступны только в личных (1:1) чатах.");
+        // Начинаем слушать ICE-кандидатов от собеседника (callee)
+        listenForCandidates('callee');
+
+    } catch (e) {
+        console.error("Ошибка при инициировании звонка:", e);
+        endCall(true, "Не удалось инициировать звонок.");
     }
 });
+
+
+/**
+ * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
+ */
+let callOffer = null; // Хранит данные входящего звонка
+
+onAuthStateChanged(auth, (user) => {
+    // ... (существующий код) ...
+    if (user) {
+        // ... (инициализация пользователя) ...
+
+        // Слушаем входящие звонки, где calleeUid == currentUid
+        onSnapshot(query(callsRef, where('calleeUid', '==', user.uid), where('status', '==', 'ringing')), (snapshot) => {
+            if (snapshot.docs.length > 0 && !currentCallId) {
+                const incomingCallDoc = snapshot.docs[0];
+                callOffer = {
+                    ...incomingCallDoc.data(),
+                    id: incomingCallDoc.id
+                };
+                currentCallId = callOffer.id;
+
+                // Показываем модальное окно и кнопку "Принять"
+                callModal.style.display = 'block';
+                callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`;
+                answerCallBtn.style.display = 'inline-block';
+                callMessage.innerText = 'Нажмите "Принять"';
+            }
+        });
+    }
+    // ... (else { ... } код) ...
+});
+
+
+/**
+ * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
+ */
+answerCallBtn.addEventListener('click', async () => {
+    if (!(await startLocalStream())) return;
+    
+    callStatus.innerText = `Подключение к ${callOffer.callerUid}...`;
+    answerCallBtn.style.display = 'none';
+
+    setupPeerConnection();
+
+    try {
+        // Устанавливаем Offer, полученный от вызывающего
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(callOffer.offer));
+        
+        // Создаем Answer (Ответ)
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        // Обновляем документ звонка с Answer и статусом
+        const callDocRef = doc(callsRef, currentCallId);
+        await updateDoc(callDocRef, {
+            answer: {
+                sdp: answer.sdp,
+                type: answer.type
+            },
+            status: 'accepted'
+        });
+        callStatus.innerText = 'Соединение устанавливается...';
+
+        // Начинаем слушать ICE-кандидатов от собеседника (caller)
+        listenForCandidates('caller');
+
+    } catch (e) {
+        console.error("Ошибка при приеме звонка:", e);
+        endCall(true, "Не удалось принять звонок.");
+    }
+});
+
+/**
+ * 6. Общая функция для прослушивания ICE-кандидатов.
+ */
+function listenForCandidates(type) {
+    const candidatesRef = collection(db, `calls/${currentCallId}/candidates/${type}`);
+    onSnapshot(candidatesRef, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                const candidate = new RTCIceCandidate(change.doc.data());
+                peerConnection.addIceCandidate(candidate).catch(e => console.error('Ошибка при добавлении кандидата:', e));
+            }
+        });
+    });
+}
+
+/**
+ * 7. Завершает звонок.
+ */
+hangupCallBtn.addEventListener('click', () => {
+    endCall(true, "Вы завершили звонок.");
+});
+
+async function endCall(updateStatus, message) {
+    // 1. Закрываем WebRTC
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    
+    // 2. Останавливаем локальные потоки
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+
+    // 3. Сброс видеоэлементов
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+    remoteStream = null;
+
+    // 4. Обновляем статус в Firestore (если нужно)
+    if (updateStatus && currentCallId) {
+        try {
+            const callDocRef = doc(callsRef, currentCallId);
+            await setDoc(callDocRef, { status: 'ended' }, { merge: true });
+        } catch (e) {
+             console.warn("Не удалось обновить статус звонка в Firestore:", e);
+        }
+    }
+    
+    // 5. Очищаем переменные состояния
+    currentCallId = null;
+    callOffer = null;
+
+    // 6. Скрываем модальное окно и показываем сообщение
+    alert(message || "Звонок завершен.");
+    callModal.style.display = 'none';
+    callStatus.innerText = 'Ожидание звонка...';
+    callMessage.innerText = '';
+}
