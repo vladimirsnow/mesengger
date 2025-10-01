@@ -714,28 +714,34 @@ callBtn.addEventListener("click", async () => {
         callMessage.innerText = 'Ожидаем ответа собеседника...';
 
         // Слушаем ответ (Answer) от собеседника
-        onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
-    const data = docSnap.data();
+            unsubscribeCallListener = onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
+        const data = docSnap.data();
 
-    // ⭐️ ИСПРАВЛЕНИЕ #1: Добавляем проверку peerConnection
-    if (!peerConnection) {
-        return; 
-    }
+        // ⭐️ ИСПРАВЛЕНИЕ #1 (проверка peerConnection)
+        if (!peerConnection) {
+            return; 
+        }
 
-    if (data && data.answer && !peerConnection.currentRemoteDescription) {
-        console.log("Получен Answer:", data.answer);
-        peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-    }
+        if (data && data.answer && !peerConnection.currentRemoteDescription) {
+            console.log("Получен Answer:", data.answer);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+        
+        // ⭐️ ИСПРАВЛЕНИЕ #2 (проверка peerConnection)
+        if (data && data.status === 'accepted' && peerConnection) {
+            callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
+        }
+        
+        // Это уже было корректно
+        if (data && data.status === 'rejected') {
+            endCall(true, `${currentChatName.innerText} отклонил звонок.`);
+        }
+    }); // <--- ЗАКРЫВАЮЩАЯ СКОБКА onSnapshot
     
-    // ⭐️ ИСПРАВЛЕНИЕ #2: Проверяем peerConnection и при обработке статусов
-    if (data && data.status === 'accepted' && peerConnection) {
-        callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
-    }
-    
-    // Это уже было корректно
-    if (data && data.status === 'rejected') {
-        endCall(true, `${currentChatName.innerText} отклонил звонок.`);
-    }
+} catch (e) { // <--- ДОБАВЛЯЕМ CATCH BLOCK, КОТОРЫЙ БЫЛ ПРОПУЩЕН
+    console.error("Ошибка при инициации звонка:", e);
+    endCall(false, "Не удалось начать звонок.");
+}
 });
 /**
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
@@ -874,5 +880,4 @@ async function endCall(updateStatus, message) {
     callModal.style.display = 'none';
     callStatus.innerText = 'Ожидание звонка...';
     callMessage.innerText = '';
-}
 }
