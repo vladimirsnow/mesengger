@@ -52,7 +52,6 @@ const emailIn = document.getElementById("email");
 const passIn = document.getElementById("password");
 const nicknameIn = document.getElementById("nickname");
 const loginBtn = document.getElementById("loginBtn");
-const welcome = document.getElementById("welcome");
 const messagesDiv = document.getElementById("messages");
 const msgInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -80,7 +79,6 @@ const groupNameLabel = document.getElementById("groupNameLabel");
 const groupParticipantsDisplay = document.getElementById(
   "groupParticipantsDisplay"
 );
-const currentNickDisplay = document.getElementById("currentNickDisplay");
 const finalizeChatBtn = document.getElementById("finalizeChatBtn");
 
 // --- НОВЫЕ Элементы для Звонков WebRTC ---
@@ -138,7 +136,6 @@ onAuthStateChanged(auth, async (user) => {
       ? udoc.data().nickname || user.email
       : user.email;
 
-    currentNickDisplay.innerText = currentNick;
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
 
@@ -481,6 +478,10 @@ async function sendMessage() {
 // Инициализация модального окна
 newChatBtn.addEventListener("click", () => {
   searchUserModal.style.display = "block";
+  // Ищем и обновляем ник только при открытии модального окна
+  const currentNickDisplay = document.getElementById("currentNickDisplay");
+  currentNickDisplay.innerText = currentNick;
+
   searchResults.innerHTML = "";
   searchNickname.value = "";
   groupNameInput.value = "";
