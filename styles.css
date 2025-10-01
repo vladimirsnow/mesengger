@@ -419,8 +419,7 @@ label[for="fileInput"]:hover {
 
 /* --- Новая структура чата --- */
 #chat {
-  display: flex;
-  flex-grow: 1;
+  /* display управляется через JS (flex) или инлайн-стиль (none) */
   gap: 20px;
   overflow: hidden;
 }

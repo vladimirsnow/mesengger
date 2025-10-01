@@ -135,12 +135,12 @@ onAuthStateChanged(auth, async (user) => {
       : user.email;
 
     // 1. СНАЧАЛА делаем чат видимым
-    authDiv.style.display = "none";
-    chatDiv.style.display = "flex";
+    authDiv.style.display = "none"; // Скрываем форму входа
+    chatDiv.style.display = "flex"; // Показываем интерфейс чата
 
     // 2. ПОТОМ переключаемся на чат и запускаем слушатели
-    switchChat("global", "Общий чат");
-    startChatsListener();
+    switchChat("global", "Общий чат"); // Устанавливаем активным общий чат
+    startChatsListener(); // Запускаем прослушивание списка чатов
 
     // Слушаем входящие звонки, где calleeUid == currentUid
     // Этот код был в отдельном onAuthStateChanged, переносим его сюда.
@@ -148,8 +148,8 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentNick = "";
     currentUid = null;
-    authDiv.style.display = "block";
-    chatDiv.style.display = "none";
+    authDiv.style.display = "block"; // Показываем форму входа
+    chatDiv.style.display = "none"; // Скрываем интерфейс чата
     messagesDiv.innerHTML = "";
     stopMessagesListener();
     stopChatsListener();
@@ -294,16 +294,23 @@ function switchChat(newChatId, chatName, targetUid = null) {
   currentChatName.innerText = chatName;
 
   startMessagesListener(currentChatId);
-
+  
   // Кнопка звонка видна только для 1:1 чатов (когда targetUid не null)
   callBtn.style.display = targetUid ? "inline-block" : "none";
+
+  // На мобильных устройствах переключаемся на экран чата
+  if (window.innerWidth <= 768) {
+    chatDiv.classList.add("show-chat-area");
+  }
 }
 
 // Привязываем обработчик к "Общему чату"
-globalChatLink.addEventListener("click", (e) => {
-  e.preventDefault();
-  switchChat("global", "Общий чат");
-});
+if (globalChatLink) {
+  globalChatLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    switchChat("global", "Общий чат");
+  });
+}
 
 // РЕНДЕР ЭЛЕМЕНТА В СПИСКЕ ЧАТОВ
 function renderChatItem(chatId, chatData) {
@@ -571,22 +578,13 @@ searchUserBtn.addEventListener("click", async () => {
 
 // --- НОВАЯ ЛОГИКА МОБИЛЬНОЙ НАВИГАЦИИ ---
 
-// Переопределяем switchChat для мобильной навигации
-const originalSwitchChat = switchChat;
-window.switchChat = (newChatId, chatName, targetUid = null) => {
-  originalSwitchChat(newChatId, chatName, targetUid);
-  // На мобильных устройствах переключаемся на экран чата
-  if (window.innerWidth <= 768) {
-    chatDiv.classList.add("show-chat-area");
-  }
-};
-
 // Кнопка "Назад" для возврата к списку чатов
-backToChatListBtn.addEventListener("click", () => {
-  if (window.innerWidth <= 768) {
+if (backToChatListBtn) {
+  backToChatListBtn.addEventListener("click", () => {
+    // Просто убираем класс, CSS сам разберется с медиа-запросом
     chatDiv.classList.remove("show-chat-area");
-  }
-});
+  });
+}
 
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
 finalizeChatBtn.addEventListener("click", async () => {
