@@ -1,188 +1,128 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
+       
     <meta charset="utf-8" />
+       
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+       
     <title>Мессенджер MAX</title>
+       
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="adaptation.css" />
   </head>
+
   <body>
+       
     <div class="container">
+             
       <h2>Мессенджер MAX</h2>
 
+             
       <div id="auth">
+                   
         <div class="row">
-          <input id="email" type="email" placeholder="Email" />
-          <input id="password" type="password" placeholder="Пароль" />
-          <input
-            id="nickname"
-            type="text"
-            placeholder="Ник (только при регистрации)"
-          />
+                         
+          <input id="email" type="email" placeholder="Email" />                
+          <input id="password" type="password" placeholder="Пароль" />        
+          <input id="nickname" type="text" placeholder="Ник (только при регистрации)" />  
+           
         </div>
+                   
         <div class="controls">
-          <button id="loginBtn">Войти</button>
-          <button id="registerBtn">Регистрация</button>
+                          <button id="loginBtn">Войти</button>    
+                            <button id="registerBtn">Регистрация</button>
         </div>
+               
       </div>
 
+             
       <div id="chat" style="display: none">
-        <!-- Кнопка для открытия списка чатов на мобильных устройствах -->
-        <button id="toggleChatListBtn" title="Список чатов">☰</button>
-        <!-- Контейнер для списка чатов (боковая панель) -->
-        <div id="chatListContainer">
-          <button id="closeChatListBtn">X</button>
-          <div id="chatList">
-            <a
-              href="#"
-              id="globalChatLink"
-              class="chat-item active"
-              data-chat-id="global"
-              >Общий чат</a
-            >
-          </div>
-          <button id="newChatBtn" class="primary">Создать чат/группу</button>
+        <div class="chat-main-content"> 
+            
+            <div id="chatListSidebar">
+                <div class="row chat-header">
+                    <div class="small" id="welcome">Привет</div>
+                    <button id="logoutBtn">Выйти</button>
+                </div>
+                
+                <h3>Чаты</h3>
+                <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Создать новый чат</button>
+                <div id="chatList">
+                    <div class="chat-item active" id="globalChatLink" data-chat-id="global">Общий чат</div>
+                    </div>
+            </div>
+
+            <div id="activeChatArea">
+                <div class="row chat-header">
+                    <div class="small" id="currentChatName" style="font-weight: bold; flex-grow: 1;">Общий чат</div>
+                    <button id="callBtn" title="Начать звонок" style="display:none;">📞</button>
+                </div>
+
+                <div id="messages"></div>
+
+                <div class="controls" style="margin-top: 8px">
+                    <input
+                        id="messageInput"
+                        type="text"
+                        placeholder="Введите сообщение..."
+                        style="flex: 1"
+                    />
+                    <label for="fileInput" title="Прикрепить файл">📎</label>
+                    <button id="sendBtn" class="primary">Отправить</button>
+                </div>
+                <div id="progress" style="margin-left: 0;"></div>
+            </div>
         </div>
 
-        <!-- Основная область чата -->
-        <div id="mainChatArea">
-          <div id="chatHeader" class="row">
-            <h2 id="currentChatName" style="flex-grow: 1">Общий чат</h2>
-            <button id="callBtn" title="Начать звонок" style="display: none">
-              📞 Звонок
-            </button>
-            <button id="logoutBtn">Выйти</button>
-          </div>
-
-          <div id="messages"></div>
-
-          <div id="inputArea" class="controls">
-            <input
-              type="text"
-              id="messageInput"
-              placeholder="Введите сообщение..."
-              style="flex: 1"
-            />
-            <label for="fileInput" title="Прикрепить файл">📎</label>
-            <button id="sendBtn" class="primary">Отправить</button>
-          </div>
-          <div id="progress"></div>
-        </div>
-
-        <!-- Скрытый инпут для файлов -->
-        <input type="file" id="fileInput" />
+                    <input type="file" id="fileInput" />        
       </div>
+         
     </div>
+       
+    <div id="searchUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100;">
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; margin: 100px auto; ">
+            <h4>Создание чата</h4>
+            
+            <label for="groupNameInput" style="margin-bottom: 5px; font-size: 0.9em;" id="groupNameLabel">Название группы:</label>
+            <input id="groupNameInput" type="text" placeholder="Введите название группы" style="margin-bottom: 8px; display: none;">
 
-    <div
-      id="searchUserModal"
-      style="
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 100;
-      "
-    >
-      <div
-        style="
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          width: 90%;
-          max-width: 400px;
-          margin: 100px auto;
-        "
-      >
-        <h4>Создание чата</h4>
+            <div class="row" style="margin-bottom: 8px;">
+                <input id="searchNickname" type="text" placeholder="Введите ник пользователя для добавления" style="flex: 1;"/>
+                <button id="searchUserBtn" class="primary">Найти</button>
+            </div>
+            
+            <div id="searchResults" style="margin-bottom: 10px; min-height: 30px; border: 1px solid #ddd; padding: 5px; border-radius: 6px; font-size: 0.9em;"></div>
+            
+            <div id="selectedUsersList" style="margin-bottom: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; background: #f9f9f9; font-size: 0.9em;">
+                Участники: <span id="groupParticipantsDisplay" style="font-weight: bold;">Вы (<span id="currentNickDisplay"></span>)</span>
+            </div>
 
-        <label
-          for="groupNameInput"
-          style="margin-bottom: 5px; font-size: 0.9em"
-          id="groupNameLabel"
-          >Название группы:</label
-        >
-        <input
-          id="groupNameInput"
-          type="text"
-          placeholder="Введите название группы"
-          style="margin-bottom: 8px; display: none"
-        />
-
-        <div class="row" style="margin-bottom: 8px">
-          <input
-            id="searchNickname"
-            type="text"
-            placeholder="Введите ник пользователя для добавления"
-            style="flex: 1"
-          />
-          <button id="searchUserBtn" class="primary">Найти</button>
+            <div class="controls" style="gap: 10px;">
+                <button id="finalizeChatBtn" class="primary" style="flex: 1;">Начать чат (1:1 или Группа)</button>
+                <button id="closeSearchModal" style="flex: 1;">Закрыть</button>
+            </div>
         </div>
-
-        <div
-          id="searchResults"
-          style="
-            margin-bottom: 10px;
-            min-height: 30px;
-            border: 1px solid #ddd;
-            padding: 5px;
-            border-radius: 6px;
-            font-size: 0.9em;
-          "
-        ></div>
-
-        <div
-          id="selectedUsersList"
-          style="
-            margin-bottom: 15px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: #f9f9f9;
-            font-size: 0.9em;
-          "
-        >
-          Участники:
-          <span id="groupParticipantsDisplay" style="font-weight: bold"
-            >Вы (<span id="currentNickDisplay"></span>)</span
-          >
-        </div>
-
-        <div class="controls" style="gap: 10px">
-          <button id="finalizeChatBtn" class="primary" style="flex: 1">
-            Начать чат (1:1 или Группа)
-          </button>
-          <button id="closeSearchModal" style="flex: 1">Закрыть</button>
-        </div>
-      </div>
     </div>
-    <div id="callModal">
-      <div class="call-content">
+<div id="callModal">
+    <div class="call-content">
         <h3 id="callStatus">Ожидание звонка...</h3>
 
         <div id="videoContainer">
-          <video id="remoteVideo" autoplay playsinline></video>
 
-          <video id="localVideo" autoplay muted playsinline></video>
+            <video id="remoteVideo" autoplay playsinline></video>
+
+            <video id="localVideo" autoplay muted playsinline></video>
         </div>
 
         <div id="callControls">
-          <button
-            id="answerCallBtn"
-            class="primary success-btn"
-            style="display: none"
-          >
-            Ответить
-          </button>
-          <button id="hangupCallBtn" class="danger">Завершить</button>
+            <button id="answerCallBtn" class="primary success-btn" style="display: none">Ответить</button>
+            <button id="hangupCallBtn" class="danger">Завершить</button>
         </div>
         <div id="callMessage"></div>
-      </div>
     </div>
+</div>
+    
     <script type="module" src="app.js"></script>
-  </body>
+</body>
 </html>
