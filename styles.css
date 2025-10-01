@@ -47,7 +47,7 @@ body {
 
 .container {
   width: 100%;
-  height: 100%;
+  height: 100vh; /* Используем 100vh для полной высоты экрана */
   background-color: var(--bg-container);
   box-sizing: border-box;
   transition: background-color 0.2s;
@@ -146,12 +146,10 @@ button.primary:hover,
 }
 
 #logoutBtn {
+  /* Изменено: Убрано position: absolute */
   background-color: var(--danger-color);
   color: var(--text-on-primary);
   border-color: var(--danger-color);
-  position: absolute;
-  right: 30px;
-  top: 60px;
 }
 
 #logoutBtn:hover {
@@ -159,10 +157,76 @@ button.primary:hover,
   border-color: var(--danger-hover);
 }
 
+/* Стили для нового макета чата */
+#chat {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.chat-main-content {
+    display: flex;
+    flex-grow: 1; 
+    gap: 20px;
+    padding-top: 10px;
+    overflow: hidden;
+}
+
+#chatListSidebar {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    padding-right: 20px;
+    border-right: 1px solid var(--border-color-light);
+    flex-shrink: 0; 
+}
+
+#chatList {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+#activeChatArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--bg-button);
+    transition: background-color 0.1s;
+}
+
+.chat-item:hover {
+    background-color: var(--bg-button-hover);
+}
+
+.chat-item.active {
+    background-color: var(--primary-color);
+    color: var(--text-on-primary);
+}
+
+.chat-item.active:hover {
+    background-color: var(--primary-hover);
+}
+
+.chat-header {
+  align-items: center;
+  margin-bottom: 10px;
+}
+/* Конец стилей для нового макета чата */
+
+
 #chat .row {
-  justify-content: space-between; /* Распределяет элементы по краям */
-  align-items: center; /* Выравнивает по вертикали */
-  margin-bottom: 24px; /* Отступ под шапкой */
+  justify-content: space-between;
+  align-items: center; 
+  margin-bottom: 24px; 
 }
 
 #welcome {
@@ -171,8 +235,9 @@ button.primary:hover,
 }
 
 #messages {
-  height: 100%;
-  max-height: 50vh;
+  height: auto;
+  max-height: unset; /* Убрано фиксированное ограничение */
+  flex-grow: 1; /* Позволяет занимать всю доступную высоту */
   border: 1px solid var(--border-color-light);
   border-radius: 6px;
   padding: 12px;
@@ -181,6 +246,7 @@ button.primary:hover,
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 8px; /* Отступ до контролов */
 }
 
 @keyframes fadeIn {
@@ -206,7 +272,7 @@ button.primary:hover,
   box-shadow: var(--msg-shadow);
 }
 
-.msg.own {
+.msg.own { /* Стили для своих сообщений */
   align-self: flex-end;
   background-color: var(--bg-msg-own);
   color: var(--text-on-own-msg);
@@ -263,6 +329,8 @@ label[for="fileInput"] {
 label[for="fileInput"]:hover {
   background-color: var(--bg-button-hover);
 }
+
+/* Дарк-мод */
 @media (prefers-color-scheme: dark) {
   :root {
     --primary-color: #52a7f0;
