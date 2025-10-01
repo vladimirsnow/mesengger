@@ -433,6 +433,36 @@ label[for="fileInput"]:hover {
     background-color: var(--success-hover);
 }
 
+
+#chat {
+    display: flex; /* Делаем главный контейнер Flex, чтобы #chatList и основной чат были рядом */
+    height: 100vh;
+}
+
+#chatListContainer {
+    width: 250px; /* Ширина списка чатов на десктопе */
+    flex-shrink: 0;
+    display: flex; /* Устанавливаем в flex, чтобы контейнер был видим */
+    flex-direction: column;
+}
+
+#chatList {
+    overflow-y: auto;
+}
+
+#mainChatArea {
+    /* Контейнер для заголовка, сообщений и ввода */
+    flex-grow: 1; /* Основной чат занимает оставшееся место */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Скрываем кнопки переключения по умолчанию */
+#toggleChatListBtn, #closeChatListBtn {
+    display: none; 
+}
+
+
 /* Дарк-мод */
 @media (prefers-color-scheme: dark) {
   :root {

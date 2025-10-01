@@ -37,21 +37,30 @@
       </div>
 
              
-      <div id="chat" style="display: none">
-        <div class="chat-main-content"> 
-            
-            <div id="chatListSidebar">
-                <div class="row chat-header">
-                    <div class="small" id="welcome">Привет</div>
-                    <button id="logoutBtn">Выйти</button>
-                </div>
-                
-                <h3>Чаты</h3>
-                <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Создать новый чат</button>
-                <div id="chatList">
-                    <div class="chat-item active" id="globalChatLink" data-chat-id="global">Общий чат</div>
-                    </div>
+      <div id="chat" style="display: none;">
+    
+    <button id="toggleChatListBtn">☰</button> 
+    <div id="chatListContainer">
+        <button id="closeChatListBtn">X</button>
+        <div id="chatList">
+            <a href="#" id="globalChatLink" class="chat-item active" data-chat-id="global">Общий чат</a>
+        </div>
+    </div>
+    <div id="mainChatArea"> 
+        <div id="chatHeader">
+            <h2 id="currentChatName">Общий чат</h2>
+            <button id="callBtn" style="display: none;">📞 Звонок</button>
+        </div>
+        
+        <div id="messages">
             </div>
+        
+        <div id="inputArea">
+            <input type="text" id="messageInput">
+            </div>
+    </div>
+</div>
+
 
             <div id="activeChatArea">
                 <div class="row chat-header">

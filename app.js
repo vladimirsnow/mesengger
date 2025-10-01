@@ -533,6 +533,40 @@ searchUserBtn.addEventListener("click", async () => {
     }
 });
 
+let isChatListOpen = false;
+
+// 1. Открытие списка чатов (по кнопке-гамбургеру)
+toggleChatListBtn.addEventListener("click", () => {
+    chatListContainer.style.display = 'flex'; // Используйте 'flex' или 'block' в зависимости от вашего CSS
+    isChatListOpen = true;
+});
+
+// 2. Закрытие списка чатов (по кнопке "X")
+closeChatListBtn.addEventListener("click", () => {
+    // В мобильном режиме просто скрываем его
+    chatListContainer.style.display = 'none';
+    isChatListOpen = false;
+});
+
+// 3. Добавление мобильной логики в switchChat
+const originalSwitchChat = switchChat;
+switchChat = (newChatId, chatName, targetUid = null) => {
+    // Выполняем оригинальную функцию переключения
+    originalSwitchChat(newChatId, chatName, targetUid);
+
+    // Если список чатов открыт (только на мобильном устройстве) - закрываем его после выбора
+    if (isChatListOpen && window.innerWidth <= 768) { // 768px - типичный порог для мобильных
+        chatListContainer.style.display = 'none';
+        isChatListOpen = false;
+    }
+};
+
+// 4. Добавление обработчика для глобального чата
+globalChatLink.addEventListener("click", () => {
+    switchChat("global", "Общий чат");
+    // Логика закрытия списка чатов (дублируется в переопределенном switchChat)
+});
+
 
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
 finalizeChatBtn.addEventListener("click", async () => {

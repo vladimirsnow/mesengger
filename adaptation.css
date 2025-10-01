@@ -11,6 +11,47 @@
     flex-direction: column;
     align-items: stretch;
   }
+
+    #chat {
+        flex-direction: column; /* Элементы идут сверху вниз */
+        position: relative; /* Важно для позиционирования наложения */
+    }
+
+    /* Основной чат должен занимать всю доступную ширину */
+    #mainChatArea {
+        width: 100%;
+    }
+
+    /* 1. Скрываем список чатов по умолчанию */
+    #chatListContainer {
+        position: fixed; /* Наложение поверх всего */
+        top: 0;
+        left: 0;
+        width: 100%; /* Занимает всю ширину */
+        max-width: 300px; /* Или оставьте 100% */
+        height: 100%;
+        background-color: var(--background-color, white); /* Ваш цвет фона */
+        z-index: 1000; /* Поверх всех остальных элементов */
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        
+        /* Изначально скрываем на мобильном устройстве */
+        display: none; 
+    }
+
+    /* 2. Отображаем кнопки управления */
+    #toggleChatListBtn {
+        display: block; /* Показываем кнопку-гамбургер */
+        position: absolute; /* Позиционируем в заголовке */
+        top: 10px; 
+        left: 10px;
+        z-index: 100;
+    }
+    
+    #closeChatListBtn {
+        display: block; /* Показываем кнопку закрытия внутри списка */
+        align-self: flex-end; /* Размещаем в углу */
+        margin: 10px;
+    }
 }
 
 @media (max-width: 480px) {
