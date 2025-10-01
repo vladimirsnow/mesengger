@@ -626,10 +626,7 @@ async function startLocalStream() {
     }
 }
 
-/**
- * 2. Инициализирует RTCPeerConnection и настраивает обработчики событий.
- */
-function setupPeerConnection() {
+function setupPeerConnection(isCaller) {
     peerConnection = new RTCPeerConnection({
         // Использование общедоступных STUN-серверов Google для определения сетевых адресов
         iceServers: [
@@ -652,18 +649,19 @@ function setupPeerConnection() {
         callMessage.innerText = 'Разговор начался!';
     };
 
-    // ИСПРАВЛЕНИЕ #1: Обновленный обработчик для сбора ICE-кандидатов
+    // Обновленный обработчик для сбора ICE-кандидатов
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
             const candidate = event.candidate.toJSON();
             
-            // Определение нашей роли для пути к коллекции
-            // Если callOffer не установлен, мы - Caller (инициатор)
-            const isCaller = callOffer === null; 
+            // Определяем коллекцию, куда сохранять НАШИ кандидаты
             const candidateCollectionName = isCaller ? 'callerCandidates' : 'calleeCandidates';
             
-            const candidateRef = collection(db, `calls/${currentCallId}/${candidateCollectionName}`);
-            addDoc(candidateRef, candidate);
+            // Используем currentCallId, который уже установлен
+            if (currentCallId) { 
+                 const candidateRef = collection(db, `calls/${currentCallId}/${candidateCollectionName}`);
+                 addDoc(candidateRef, candidate);
+            }
         }
     };
 
@@ -673,75 +671,80 @@ function setupPeerConnection() {
         if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
             // Разъединение: автоматически завершаем звонок
             if (callModal.style.display !== 'none') {
-                 endCall(false, 'Соединение разорвано.');
+                endCall(false, 'Соединение разорвано.');
             }
         }
     };
 }
 /**
- * 3. ИНИЦИАТОР (CALLER): Запускает звонок.
+ * 3. ИНИЦИАТОР: Запускает звонок.
  */
 callBtn.addEventListener("click", async () => {
-    if (!currentChatTargetUid) {
-        return alert("Звонки доступны только в личных (1:1) чатах.");
-    }
-    
     if (!(await startLocalStream())) return;
 
     callModal.style.display = 'block';
     callStatus.innerText = `Звонок пользователю ${currentChatName.innerText}...`;
     answerCallBtn.style.display = 'none';
-
-    setupPeerConnection();
-
+    
+    // ⭐️ ИСПРАВЛЕНИЕ: Создаем документ звонка ПЕРЕД setupPeerConnection
+    // Это нужно, чтобы currentCallId был установлен для сбора локальных кандидатов
     try {
-        // Создаем Offer (Предложение)
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        // Создаем новый документ для сигнализации в Firestore
         const callDoc = await addDoc(callsRef, {
             callerUid: currentUid,
             calleeUid: currentChatTargetUid,
-            offer: {
-                sdp: offer.sdp,
-                type: offer.type,
-            },
-            status: 'ringing', // Статус: звонит
+            offer: null, // Offer будет добавлен ниже
+            status: 'ringing',
             createdAt: serverTimestamp()
         });
         currentCallId = callDoc.id;
         callMessage.innerText = 'Ожидаем ответа собеседника...';
-
-        // Слушаем ответ (Answer) от собеседника
-            unsubscribeCallListener = onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
-        const data = docSnap.data();
-
-        // ⭐️ ИСПРАВЛЕНИЕ #1 (проверка peerConnection)
-        if (!peerConnection) {
-            return; 
-        }
-
-        if (data && data.answer && !peerConnection.currentRemoteDescription) {
-            console.log("Получен Answer:", data.answer);
-            peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        }
         
-        // ⭐️ ИСПРАВЛЕНИЕ #2 (проверка peerConnection)
-        if (data && data.status === 'accepted' && peerConnection) {
-            callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
-        }
+        // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = true
+        setupPeerConnection(true);
+
+        // Создаем Offer (Предложение)
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        // Обновляем документ в Firestore с Offer
+        await updateDoc(doc(callsRef, currentCallId), {
+            offer: {
+                sdp: offer.sdp,
+                type: offer.type,
+            }
+        });
+
+        // ⭐️ НОВЫЙ ШАГ: Инициатор начинает слушать кандидатов от Callee
+        const unsubscribeCalleeCandidates = listenForCandidates('callee');
+
+        // Слушаем ответ (Answer) от собеседника и его статус
+        unsubscribeCallListener = onSnapshot(doc(callsRef, currentCallId), (docSnap) => {
+            const data = docSnap.data();
+
+            if (!peerConnection) {
+                unsubscribeCalleeCandidates(); // ⭐️ ИСПРАВЛЕНИЕ: Останавливаем слушатель
+                return; 
+            }
+
+            if (data && data.answer && !peerConnection.currentRemoteDescription) {
+                console.log("Получен Answer:", data.answer);
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                // После установки RemoteDescription WebRTC начнет обмениваться потоками
+            }
+            
+            if (data && data.status === 'accepted') {
+                callStatus.innerText = `Звонок принят: ${currentChatName.innerText}`;
+            }
+            
+            if (data && data.status === 'rejected') {
+                endCall(true, `${currentChatName.innerText} отклонил звонок.`);
+            }
+        }); 
         
-        // Это уже было корректно
-        if (data && data.status === 'rejected') {
-            endCall(true, `${currentChatName.innerText} отклонил звонок.`);
-        }
-    }); // <--- ЗАКРЫВАЮЩАЯ СКОБКА onSnapshot
-    
-} catch (e) { // <--- ДОБАВЛЯЕМ CATCH BLOCK, КОТОРЫЙ БЫЛ ПРОПУЩЕН
-    console.error("Ошибка при инициации звонка:", e);
-    endCall(false, "Не удалось начать звонок.");
-}
+    } catch (e) { 
+        console.error("Ошибка при инициации звонка:", e);
+        endCall(false, "Не удалось начать звонок.");
+    }
 });
 /**
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
@@ -781,12 +784,13 @@ onAuthStateChanged(auth, (user) => {
  * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
  */
 answerCallBtn.addEventListener('click', async () => {
-    if (!(await startLocalStream())) return;
+     if (!(await startLocalStream())) return;
     
     callStatus.innerText = `Подключение к ${callOffer.callerUid}...`;
     answerCallBtn.style.display = 'none';
 
-    setupPeerConnection();
+    // ⭐️ ИСПРАВЛЕНИЕ: Вызываем setupPeerConnection с ролью isCaller = false
+    setupPeerConnection(false);
 
     try {
         // Устанавливаем Offer, полученный от вызывающего
@@ -798,18 +802,22 @@ answerCallBtn.addEventListener('click', async () => {
 
         // Обновляем документ звонка с Answer и статусом
         const callDocRef = doc(callsRef, currentCallId);
-        // ИСПРАВЛЕНИЕ #2: Используем setDoc с merge:true
         await setDoc(callDocRef, {
             answer: {
                 sdp: answer.sdp,
                 type: answer.type
             },
             status: 'accepted'
-        }, { merge: true }); // Критически важно для обновления!
+        }, { merge: true }); 
         callStatus.innerText = 'Соединение устанавливается...';
 
-        // Начинаем слушать ICE-кандидатов от собеседника (caller)
-        listenForCandidates('caller');
+        // ⭐️ НОВЫЙ ШАГ: Принимающая сторона начинает слушать кандидатов от Caller
+        const unsubscribeCallerCandidates = listenForCandidates('caller'); 
+
+        // ⭐️ ИСПРАВЛЕНИЕ: Добавляем слушатель, чтобы его можно было остановить
+        unsubscribeCallListener = () => {
+            unsubscribeCallerCandidates();
+        };
 
     } catch (e) {
         console.error("Ошибка при приеме звонка:", e);
@@ -823,12 +831,24 @@ answerCallBtn.addEventListener('click', async () => {
  * 6. Общая функция для прослушивания ICE-кандидатов.
  */
 function listenForCandidates(type) {
-    // ИСПРАВЛЕНИЕ #3: Этот путь уже правильный
+    // Если мы Callee (принимающая сторона), мы слушаем 'callerCandidates'.
+    // Если мы Caller (инициатор), мы слушаем 'calleeCandidates'.
     const candidateType = (type === 'caller' ? 'callerCandidates' : 'calleeCandidates');
     const candidatesRef = collection(db, `calls/${currentCallId}/${candidateType}`);
     
-    onSnapshot(candidatesRef, (snapshot) => {
-        // ... (остальной код)
+    // Используем новую переменную-слушатель, чтобы иметь возможность ее остановить
+    return onSnapshot(candidatesRef, (snapshot) => { 
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === 'added' && peerConnection) {
+                const candidate = change.doc.data();
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    console.log(`ICE-кандидат (${type}) успешно добавлен.`);
+                } catch (e) {
+                    console.error("Ошибка при добавлении ICE-кандидата:", e);
+                }
+            }
+        });
     });
 }
 
