@@ -61,7 +61,7 @@ const currentChatName = document.getElementById("currentChatName");
 const globalChatLink = document.getElementById("globalChatLink");
 const callBtn = document.getElementById("callBtn");
 
-// Элементы для создания чата/группы (обновлено)
+// Элементы для создания чата/группы
 const newChatBtn = document.getElementById("newChatBtn");
 const searchUserModal = document.getElementById("searchUserModal");
 const closeSearchModal = document.getElementById("closeSearchModal");
@@ -191,6 +191,7 @@ function stopMessagesListener() {
 // ФУНКЦИЯ ПРОСЛУШИВАНИЯ СПИСКА ЧАТОВ (DM и ГРУПП)
 function startChatsListener() {
   if (!currentUid) return;
+  // Запрос: найти все чаты, где текущий UID есть в массиве участников
   const q = query(
     collection(db, "chats"),
     where("participants", "array-contains", currentUid),
@@ -226,8 +227,6 @@ function switchChat(newChatId, chatName, targetUid = null) {
   }
 
   currentChatId = newChatId;
-  // targetUid будет null для глобального чата и группового чата.
-  // Это UID собеседника только в 1:1 чате.
   currentChatTargetUid = targetUid; 
   currentChatName.innerText = chatName;
 
@@ -247,6 +246,7 @@ function renderChatItem(chatId, chatData) {
         chatName = `[ГР] ${chatData.name || 'Групповой чат'}`;
     } else {
         // Для DM (private) используем имя собеседника
+        // У DM-чатов массив participants всегда отсортирован
         const otherUid = chatData.participants.find(uid => uid !== currentUid);
         chatName = chatData.participantsNicknames[otherUid] || "Личный чат"; 
         targetUid = otherUid;
@@ -518,14 +518,22 @@ finalizeChatBtn.addEventListener("click", async () => {
         if (!chatName) return alert("Введите название для группового чата.");
     }
 
-    // UIDs для поиска: DM (сортируем UIDs) или Группа (не сортируем, чтобы избежать коллизий)
-    const participantsForQuery = isGroup ? participantUids : participantUids.sort();
-    
-    // 1. Ищем существующий чат (только для DM, чтобы не создавать дубликаты 1:1 чатов)
+    // --- ИСПРАВЛЕНИЕ: Гарантируем, что массив DM всегда отсортирован ---
+    let finalParticipantsArray;
+    if (isGroup) {
+        finalParticipantsArray = participantUids; // Unsorted array for groups
+    } else {
+        // Для DM, массив должен быть отсортирован для надежной проверки дубликатов
+        finalParticipantsArray = participantUids.sort(); 
+    }
+    // ------------------------------------------------------------------
+
+    // 1. Ищем существующий чат (только для DM)
     let chatId = null;
     if (!isGroup) {
         const chatsRef = collection(db, "chats");
-        const q = query(chatsRef, where("participants", "==", participantsForQuery));
+        // Используем отсортированный массив для поиска существующего DM
+        const q = query(chatsRef, where("participants", "==", finalParticipantsArray));
         const snap = await getDocs(q);
         if (!snap.empty) {
             chatId = snap.docs[0].id;
@@ -533,11 +541,11 @@ finalizeChatBtn.addEventListener("click", async () => {
     }
 
     if (!chatId) {
-        // 2. Создаем новый чат, если не нашли существующий DM или если это Группа
+        // 2. Создаем новый чат
         const newChatData = {
             type: isGroup ? "group" : "private",
-            name: isGroup ? chatName : null, // Имя только для группы
-            participants: participantUids, // Храним оригинальный массив UIDs
+            name: isGroup ? chatName : null, 
+            participants: finalParticipantsArray, // <-- ИСПОЛЬЗУЕМ ОТСОРТИРОВАННЫЙ МАССИВ ДЛЯ DM
             participantsNicknames: participantNicks,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
