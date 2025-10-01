@@ -13,14 +13,9 @@ import {
   getDoc,
   where,
   getDocs,
+  // ИСПРАВЛЕНИЕ #1: Добавление updateDoc
+  updateDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBTvvpJrXsP6OY0fRov1ImbFFYXUPW1c4w",
@@ -646,12 +641,17 @@ function setupPeerConnection() {
         callMessage.innerText = 'Разговор начался!';
     };
 
-    // Обработчик для сбора ICE-кандидатов (сетевые адреса)
+    // ИСПРАВЛЕНИЕ #1: Обновленный обработчик для сбора ICE-кандидатов
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-            // Отправляем кандидата в Firestore, чтобы собеседник его увидел
             const candidate = event.candidate.toJSON();
-            const candidateRef = collection(db, `calls/${currentCallId}/candidates/${currentUid === callOffer.callerUid ? 'caller' : 'callee'}`);
+            
+            // Определение нашей роли для пути к коллекции
+            // Если callOffer не установлен, мы - Caller (инициатор)
+            const isCaller = callOffer === null; 
+            const candidateCollectionName = isCaller ? 'callerCandidates' : 'calleeCandidates';
+            
+            const candidateRef = collection(db, `calls/${currentCallId}/${candidateCollectionName}`);
             addDoc(candidateRef, candidate);
         }
     };
@@ -667,8 +667,6 @@ function setupPeerConnection() {
         }
     };
 }
-
-
 /**
  * 3. ИНИЦИАТОР (CALLER): Запускает звонок.
  */
@@ -763,6 +761,8 @@ onAuthStateChanged(auth, (user) => {
 
 /**
  * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
+ *//**
+ * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
  */
 answerCallBtn.addEventListener('click', async () => {
     if (!(await startLocalStream())) return;
@@ -782,13 +782,14 @@ answerCallBtn.addEventListener('click', async () => {
 
         // Обновляем документ звонка с Answer и статусом
         const callDocRef = doc(callsRef, currentCallId);
-        await updateDoc(callDocRef, {
+        // ИСПРАВЛЕНИЕ #2: Используем setDoc с merge:true
+        await setDoc(callDocRef, {
             answer: {
                 sdp: answer.sdp,
                 type: answer.type
             },
             status: 'accepted'
-        });
+        }, { merge: true }); // Критически важно для обновления!
         callStatus.innerText = 'Соединение устанавливается...';
 
         // Начинаем слушать ICE-кандидатов от собеседника (caller)
@@ -799,19 +800,19 @@ answerCallBtn.addEventListener('click', async () => {
         endCall(true, "Не удалось принять звонок.");
     }
 });
-
+/**
+ * 6. Общая функция для прослушивания ICE-кандидатов.
+ */
 /**
  * 6. Общая функция для прослушивания ICE-кандидатов.
  */
 function listenForCandidates(type) {
-    const candidatesRef = collection(db, `calls/${currentCallId}/candidates/${type}`);
+    // ИСПРАВЛЕНИЕ #3: Этот путь уже правильный
+    const candidateType = (type === 'caller' ? 'callerCandidates' : 'calleeCandidates');
+    const candidatesRef = collection(db, `calls/${currentCallId}/${candidateType}`);
+    
     onSnapshot(candidatesRef, (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === 'added') {
-                const candidate = new RTCIceCandidate(change.doc.data());
-                peerConnection.addIceCandidate(candidate).catch(e => console.error('Ошибка при добавлении кандидата:', e));
-            }
-        });
+        // ... (остальной код)
     });
 }
 
