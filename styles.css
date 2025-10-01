@@ -330,6 +330,109 @@ label[for="fileInput"]:hover {
   background-color: var(--bg-button-hover);
 }
 
+
+
+
+/*
+ * ------------------------------
+ * СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ЗВОНКА
+ * ------------------------------
+ */
+#callModal {
+  /* Позиционирование на весь экран */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* Фон и центрирование контента */
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 200;
+  color: white;
+  
+  /* Flexbox для центрирования содержимого по вертикали */
+  display: flex; 
+  justify-content: center;
+  align-items: center; 
+  
+  /* Скрыт по умолчанию, управляется JS */
+  display: none; 
+}
+
+.call-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 800px; /* Ограничиваем ширину контента на десктопе */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#callStatus {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+#videoContainer {
+  /* Контейнер видео 16:9 Aspect Ratio */
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 9 / 16 * 100% = 56.25% */
+  background: #333;
+  border-radius: 8px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+#remoteVideo,
+#localVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover; /* Видео занимает всю область */
+}
+
+/* Локальное видео (маленькое окно) */
+#localVideo {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 25%; /* Уменьшаем размер */
+  max-width: 180px;
+  height: auto;
+  min-height: 0;
+  border: 3px solid white;
+  z-index: 201; /* Поверх удаленного видео */
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+
+#callControls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+#callMessage {
+  margin-top: 10px;
+  font-size: 0.9em;
+  min-height: 1.5em; /* чтобы не прыгало */
+}
+
+/* Добавляем класс для кнопки ответа, так как убрали inline-стили */
+.success-btn {
+    background-color: var(--success-color);
+}
+.success-btn:hover {
+    background-color: var(--success-hover);
+}
+
 /* Дарк-мод */
 @media (prefers-color-scheme: dark) {
   :root {

@@ -104,25 +104,24 @@
             </div>
         </div>
     </div>
-<div id="callModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; color: white; text-align: center; padding: 20px;">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <h3 id="callStatus">Ожидание звонка...</h3>
-            
-            <div id="videoContainer" style="margin: 20px 0; background: #333; border-radius: 8px; position: relative; width: 100%; padding-top: 75%; /* 4:3 Aspect Ratio */">
-                
-                <video id="remoteVideo" autoplay playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"></video>
-                
-                <video id="localVideo" autoplay muted playsinline style="position: absolute; top: 10px; right: 10px; width: 30%; max-width: 150px; border: 2px solid white; border-radius: 6px;"></video>
-            </div>
-            
-            <div id="callControls" style="display: flex; justify-content: center; gap: 20px; margin-top: 30px;">
-                <button id="answerCallBtn" class="primary" style="background-color: var(--success-color); display: none;">Принять 📞</button>
-                <button id="hangupCallBtn" class="danger">Завершить ✖</button>
-            </div>
-            
-            <p id="callMessage" style="margin-top: 20px; font-size: 0.9em; color: #aaa;">Состояние: Ожидание подключения WebRTC.</p>
+<div id="callModal">
+    <div class="call-content">
+        <h3 id="callStatus">Ожидание звонка...</h3>
+
+        <div id="videoContainer">
+
+            <video id="remoteVideo" autoplay playsinline></video>
+
+            <video id="localVideo" autoplay muted playsinline></video>
         </div>
+
+        <div id="callControls">
+            <button id="answerCallBtn" class="primary success-btn" style="display: none">Ответить</button>
+            <button id="hangupCallBtn" class="danger">Завершить</button>
+        </div>
+        <div id="callMessage"></div>
     </div>
+</div>
     
     <script type="module" src="app.js"></script>
 </body>
