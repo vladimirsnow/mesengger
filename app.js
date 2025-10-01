@@ -72,9 +72,7 @@ const searchNickname = document.getElementById("searchNickname");
 const searchUserBtn = document.getElementById("searchUserBtn");
 const searchResults = document.getElementById("searchResults");
 const groupNameInput = document.getElementById("groupNameInput");
-const toggleChatListBtn = document.getElementById("toggleChatListBtn");
-const closeChatListBtn = document.getElementById("closeChatListBtn");
-const chatListContainer = document.getElementById("chatListContainer");
+const backToChatListBtn = document.getElementById("backToChatListBtn");
 const groupNameLabel = document.getElementById("groupNameLabel");
 const groupParticipantsDisplay = document.getElementById(
   "groupParticipantsDisplay"
@@ -141,7 +139,7 @@ onAuthStateChanged(auth, async (user) => {
     chatDiv.style.display = "flex";
 
     // 2. ПОТОМ переключаемся на чат и запускаем слушатели
-    window.switchChat("global", "Общий чат");
+    switchChat("global", "Общий чат");
     startChatsListener();
 
     // Слушаем входящие звонки, где calleeUid == currentUid
@@ -300,6 +298,12 @@ function switchChat(newChatId, chatName, targetUid = null) {
   // Кнопка звонка видна только для 1:1 чатов (когда targetUid не null)
   callBtn.style.display = targetUid ? "inline-block" : "none";
 }
+
+// Привязываем обработчик к "Общему чату"
+globalChatLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  switchChat("global", "Общий чат");
+});
 
 // РЕНДЕР ЭЛЕМЕНТА В СПИСКЕ ЧАТОВ
 function renderChatItem(chatId, chatData) {
@@ -565,33 +569,23 @@ searchUserBtn.addEventListener("click", async () => {
   }
 });
 
-// --- ЛОГИКА МОБИЛЬНОЙ НАВИГАЦИИ ---
+// --- НОВАЯ ЛОГИКА МОБИЛЬНОЙ НАВИГАЦИИ ---
 
-// 1. Открытие списка чатов по кнопке-гамбургеру
-toggleChatListBtn.addEventListener("click", () => {
-  chatListContainer.style.transform = "translateX(0)";
-});
-
-// 2. Закрытие списка чатов (по кнопке "X")
-closeChatListBtn.addEventListener("click", () => {
-  chatListContainer.style.transform = "translateX(-100%)";
-});
-
-// 3. Добавление мобильной логики в switchChat
-const originalSwitchChat = switchChat; // Сохраняем оригинальную функцию
+// Переопределяем switchChat для мобильной навигации
+const originalSwitchChat = switchChat;
 window.switchChat = (newChatId, chatName, targetUid = null) => {
-  originalSwitchChat(newChatId, chatName, targetUid); // Выполняем оригинальную логику
-
-  // На мобильных устройствах скрываем панель после выбора чата
+  originalSwitchChat(newChatId, chatName, targetUid);
+  // На мобильных устройствах переключаемся на экран чата
   if (window.innerWidth <= 768) {
-    chatListContainer.style.transform = "translateX(-100%)";
+    chatDiv.classList.add("show-chat-area");
   }
 };
 
-// Обработчик для "Общего чата" нужно вешать ПОСЛЕ определения window.switchChat
-globalChatLink.addEventListener("click", (e) => {
-  e.preventDefault();
-  window.switchChat("global", "Общий чат");
+// Кнопка "Назад" для возврата к списку чатов
+backToChatListBtn.addEventListener("click", () => {
+  if (window.innerWidth <= 768) {
+    chatDiv.classList.remove("show-chat-area");
+  }
 });
 
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
@@ -660,7 +654,7 @@ finalizeChatBtn.addEventListener("click", async () => {
 
   // 4. Переключаемся на чат
   searchUserModal.style.display = "none";
-  window.switchChat(chatId, displayChatName, targetUid);
+  switchChat(chatId, displayChatName, targetUid);
 });
 
 // app.js (в самый низ файла, заменяя старую логику звонков)

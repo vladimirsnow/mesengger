@@ -37,45 +37,38 @@
       </div>
 
              
-      <div id="chat" style="display: none">
-        <div class="chat-main-content"> 
-            
-            <div id="chatListSidebar">
-                <div class="row chat-header">
-                    <div class="small" id="welcome">Привет</div>
-                    <button id="logoutBtn">Выйти</button>
-                </div>
-                
-                <h3>Чаты</h3>
-                <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Создать новый чат</button>
-                <div id="chatList">
-                    <div class="chat-item active" id="globalChatLink" data-chat-id="global">Общий чат</div>
-                    </div>
-            </div>
-
-            <div id="activeChatArea">
-                <div class="row chat-header">
-                    <div class="small" id="currentChatName" style="font-weight: bold; flex-grow: 1;">Общий чат</div>
-                    <button id="callBtn" title="Начать звонок" style="display:none;">📞</button>
-                </div>
-
-                <div id="messages"></div>
-
-                <div class="controls" style="margin-top: 8px">
-                    <input
-                        id="messageInput"
-                        type="text"
-                        placeholder="Введите сообщение..."
-                        style="flex: 1"
-                    />
-                    <label for="fileInput" title="Прикрепить файл">📎</label>
-                    <button id="sendBtn" class="primary">Отправить</button>
-                </div>
-                <div id="progress" style="margin-left: 0;"></div>
-            </div>
+      <div id="chat" style="display: none;">
+        <!-- Блок со списком чатов -->
+        <div id="chatListContainer">
+          <div class="row chat-header">
+            <div class="small" id="welcome">Привет</div>
+            <button id="logoutBtn">Выйти</button>
+          </div>
+          <h3>Чаты</h3>
+          <button id="newChatBtn" class="primary" style="width: 100%; margin-bottom: 10px;">Создать новый чат</button>
+          <div id="chatList">
+            <div class="chat-item active" id="globalChatLink" data-chat-id="global">Общий чат</div>
+          </div>
         </div>
 
-                    <input type="file" id="fileInput" />        
+        <!-- Блок с активным чатом -->
+        <div id="mainChatArea">
+          <div class="row chat-header">
+            <!-- Кнопка "Назад" для мобильных -->
+            <button id="backToChatListBtn" title="Назад">←</button>
+            <div id="currentChatName" style="font-weight: bold; flex-grow: 1;">Общий чат</div>
+            <button id="callBtn" title="Начать звонок" style="display:none;">📞</button>
+          </div>
+
+          <div id="messages"></div>
+
+          <div class="controls" style="margin-top: 8px">
+            <input id="messageInput" type="text" placeholder="Введите сообщение..." style="flex: 1" />
+            <label for="fileInput" title="Прикрепить файл">📎</label>
+            <button id="sendBtn" class="primary">Отправить</button>
+          </div>
+          <div id="progress" style="margin-left: 0;"></div>
+        </div>
       </div>
          
     </div>

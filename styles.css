@@ -157,31 +157,6 @@ button.primary:hover,
   border-color: var(--danger-hover);
 }
 
-/* Стили для нового макета чата */
-#chat {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.chat-main-content {
-    display: flex;
-    flex-grow: 1; 
-    gap: 20px;
-    padding-top: 10px;
-    overflow: hidden;
-}
-
-#chatListSidebar {
-    width: 280px;
-    display: flex;
-    flex-direction: column;
-    padding-right: 20px;
-    border-right: 1px solid var(--border-color-light);
-    flex-shrink: 0; 
-}
-
 #chatList {
     flex-grow: 1;
     overflow-y: auto;
@@ -192,15 +167,6 @@ button.primary:hover,
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-.chat-item {
-    padding: 10px;
-    margin-bottom: 5px;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: var(--bg-button);
-    transition: background-color 0.1s;
 }
 
 .chat-item:hover {
@@ -219,14 +185,6 @@ button.primary:hover,
 .chat-header {
   align-items: center;
   margin-bottom: 10px;
-}
-/* Конец стилей для нового макета чата */
-
-
-#chat .row {
-  justify-content: space-between;
-  align-items: center; 
-  margin-bottom: 24px; 
 }
 
 #welcome {
@@ -457,4 +415,41 @@ label[for="fileInput"]:hover {
 
     --shadow-color: rgba(0, 0, 0, 0.5);
   }
+}
+
+/* --- Новая структура чата --- */
+#chat {
+  display: flex;
+  flex-grow: 1;
+  gap: 20px;
+  overflow: hidden;
+}
+
+#chatListContainer {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color-light);
+  padding-right: 20px;
+}
+
+#mainChatArea {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-item {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: var(--bg-button);
+  transition: background-color: 0.1s;
+}
+
+#backToChatListBtn {
+  display: none; /* По умолчанию скрыта на десктопе */
 }
