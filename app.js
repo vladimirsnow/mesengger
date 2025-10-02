@@ -1,3 +1,4 @@
+document.addEventListener("DOMContentLoaded", () => {
 // ---------- Конфиг Firebase ----------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
@@ -948,3 +949,5 @@ async function endCall(updateStatus, message) {
     answerCallBtn.style.display = 'none';
     hangupCallBtn.textContent = 'Завершить';
 }
+
+});
