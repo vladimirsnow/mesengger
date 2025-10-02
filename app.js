@@ -1,4 +1,3 @@
-document.addEventListener("DOMContentLoaded", () => {
 // ---------- Конфиг Firebase ----------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 
@@ -81,12 +80,6 @@ const groupNameLabel = document.getElementById("groupNameLabel");
 const groupParticipantsDisplay = document.getElementById("groupParticipantsDisplay");
 const currentNickDisplay = document.getElementById("currentNickDisplay");
 const finalizeChatBtn = document.getElementById("finalizeChatBtn");
-
-// Элементы для АДАПТИВНОГО МЕНЮ (ИСПРАВЛЕНИЕ ОШИБКИ 1: Добавлены отсутствующие элементы)
-const menuToggleBtn = document.getElementById("menuToggleBtn");
-const chatSidebar = document.getElementById("chatSidebar");
-const closeSidebarBtn = document.getElementById("closeSidebarBtn");
-
 
 // --- Элементы для Звонков WebRTC ---
 const callModal = document.getElementById("callModal");
@@ -949,5 +942,3 @@ async function endCall(updateStatus, message) {
     answerCallBtn.style.display = 'none';
     hangupCallBtn.textContent = 'Завершить';
 }
-
-});
