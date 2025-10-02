@@ -70,15 +70,18 @@ const callBtn = document.getElementById("callBtn");
 const newChatBtn = document.getElementById("newChatBtn");
 const searchUserModal = document.getElementById("searchUserModal");
 const closeSearchModal = document.getElementById("closeSearchModal");
-const searchNickname = document.getElementById("userSearchInput"); // ИСПРАВЛЕНО: ID в HTML было userSearchInput
-const searchUserBtn = document.getElementById("userSearchBtn"); // ИСПРАВЛЕНО: Добавил временный ID для кнопки поиска в HTML
+
+// ИСПРАВЛЕНИЕ ОШИБКИ 2: Использован правильный ID для поля ввода поиска
+const searchNicknameInput = document.getElementById("userSearchInput"); 
+const searchUserBtn = document.getElementById("searchUserBtn");
 const searchResults = document.getElementById("searchResults");
 const groupNameInput = document.getElementById("groupNameInput");
+const groupNameLabel = document.getElementById("groupNameLabel");
 const groupParticipantsDisplay = document.getElementById("groupParticipantsDisplay");
 const currentNickDisplay = document.getElementById("currentNickDisplay");
 const finalizeChatBtn = document.getElementById("finalizeChatBtn");
 
-// Элементы для АДАПТИВНОГО МЕНЮ
+// Элементы для АДАПТИВНОГО МЕНЮ (ИСПРАВЛЕНИЕ ОШИБКИ 1: Добавлены отсутствующие элементы)
 const menuToggleBtn = document.getElementById("menuToggleBtn");
 const chatSidebar = document.getElementById("chatSidebar");
 const closeSidebarBtn = document.getElementById("closeSidebarBtn");
@@ -97,7 +100,7 @@ const callMessage = document.getElementById("callMessage");
 // --- Глобальные Переменные ---
 let peerConnection = null;
 let unsubscribeCallListener = null;
-let unsubscribeCandidateListener = null; // Новый слушатель для кандидатов
+let unsubscribeCandidateListener = null; // Для слушателей кандидатов
 let localStream = null;
 let remoteStream = null;
 let currentCallId = null; 
@@ -140,7 +143,7 @@ onAuthStateChanged(auth, async (user) => {
       ? udoc.data().nickname || user.email
       : user.email;
       
-    welcome.innerHTML = `Добро пожаловать, <span id="currentChatName">${currentNick}</span>!`;
+    welcome.innerText = "Привет, " + currentNick;
     currentNickDisplay.innerText = currentNick; 
     authDiv.style.display = "none";
     chatDiv.style.display = "flex";
@@ -267,7 +270,7 @@ function switchChat(newChatId, chatName, targetUid = null) {
 
   currentChatId = newChatId;
   currentChatTargetUid = targetUid; 
-  document.getElementById("currentChatName").innerText = chatName; // ИСПРАВЛЕНО: Обновляем правильный DOM элемент
+  currentChatName.innerText = chatName;
 
   startMessagesListener(currentChatId);
 
@@ -292,12 +295,11 @@ function renderChatItem(chatId, chatData) {
     el.className = "chat-item dm-item"; 
     el.setAttribute("data-chat-id", chatId);
     el.textContent = chatName;
-    // Логика закрытия сайдбара после выбора чата для мобильных реализована ниже
     el.addEventListener("click", () => switchChat(chatId, chatName, targetUid));
     chatList.appendChild(el); 
 }
 
-// globalChatLink.addEventListener("click", ...) - Перенесено в логику адаптива ниже
+globalChatLink.addEventListener("click", () => switchChat("global", "Общий чат"));
 
 
 function renderMessage(msg) {
@@ -451,14 +453,14 @@ async function sendMessage() {
 newChatBtn.addEventListener("click", () => {
     searchUserModal.style.display = "block";
     searchResults.innerHTML = "";
-    document.getElementById("userSearchInput").value = ""; 
+    searchNicknameInput.value = ""; // ИСПРАВЛЕНО
     groupNameInput.value = "";
     
     pendingGroupParticipants = { [currentUid]: currentNick }; 
     updatePendingParticipantsDisplay();
     
-    // Скрываем поле названия группы, пока не добавлено 2+ участников
     groupNameInput.style.display = "none";
+    groupNameLabel.style.display = "none";
 });
 
 closeSearchModal.addEventListener("click", () => {
@@ -470,36 +472,27 @@ function updatePendingParticipantsDisplay() {
     const nicknames = Object.values(pendingGroupParticipants);
     const otherNicks = nicknames.filter(nick => nick !== currentNick);
     
-    let display = `Вы (${currentNick})`;
+    let display = `Вы`;
     if (otherNicks.length > 0) {
         display += `, ${otherNicks.join(', ')}`;
     }
     
     groupParticipantsDisplay.innerHTML = `Участники: <span style="font-weight: bold;">${display}</span>`;
     
-    // Показываем поле названия группы, если участников > 2
     if (Object.keys(pendingGroupParticipants).length > 2) {
         groupNameInput.style.display = "block";
+        groupNameLabel.style.display = "block";
     } else {
         groupNameInput.style.display = "none";
+        groupNameLabel.style.display = "none";
         groupNameInput.value = "";
     }
 }
 
-// Добавлен временный обработчик для кнопки поиска, т.к. не было ID
-const userSearchInput = document.getElementById("userSearchInput");
-
-userSearchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-        e.preventDefault();
-        searchUserLogic();
-    }
-});
-
-document.querySelector('.modal-content button.primary').addEventListener("click", searchUserLogic);
-
-async function searchUserLogic() {
-    const nickname = userSearchInput.value.trim();
+// Обновленная функция поиска (теперь для добавления в группу/чат)
+searchUserBtn.addEventListener("click", async () => {
+    const nickname = searchNicknameInput.value.trim(); // ИСПРАВЛЕНО
+    
     if (!nickname) return (searchResults.innerHTML = "Введите ник.");
     if (nickname === currentNick) return (searchResults.innerHTML = "Вы уже в чате.");
     if (Object.values(pendingGroupParticipants).includes(nickname)) {
@@ -534,7 +527,7 @@ async function searchUserLogic() {
                 pendingGroupParticipants[targetUid] = userData.nickname;
                 updatePendingParticipantsDisplay();
                 searchResults.innerHTML = `<span style="color: var(--success-color); font-weight: bold;">${userData.nickname} добавлен!</span>`;
-                userSearchInput.value = "";
+                searchNicknameInput.value = ""; // ИСПРАВЛЕНИЕ: Теперь searchNicknameInput существует
             });
 
             searchResults.appendChild(addBtn);
@@ -542,7 +535,7 @@ async function searchUserLogic() {
     } catch (e) {
         searchResults.innerHTML = "Ошибка поиска: " + e.message;
     }
-}
+});
 
 
 // ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
@@ -561,6 +554,7 @@ finalizeChatBtn.addEventListener("click", async () => {
         if (!chatName) return alert("Введите название для группового чата.");
     }
 
+    // Логика сортировки для DM
     let finalParticipantsArray;
     if (isGroup) {
         finalParticipantsArray = participantUids;
@@ -573,7 +567,6 @@ finalizeChatBtn.addEventListener("click", async () => {
     let chatId = null;
     if (!isGroup) {
         const chatsRef = collection(db, "chats");
-        // Ищем чат, где поле participants точно соответствует отсортированному массиву
         const q = query(chatsRef, where("participants", "==", finalParticipantsArray));
         const snap = await getDocs(q);
         if (!snap.empty) {
@@ -720,7 +713,7 @@ function setupPeerConnection(isCaller) {
 callBtn.addEventListener("click", async () => {
     if (!(await startLocalStream())) return;
 
-    callModal.style.display = 'flex'; // ИСПРАВЛЕНО: 'flex' для правильного центрирования
+    callModal.style.display = 'flex'; 
     callStatus.innerText = `Звонок пользователю ${currentChatName.innerText}...`;
     answerCallBtn.style.display = 'none';
     
@@ -755,7 +748,11 @@ callBtn.addEventListener("click", async () => {
             const data = docSnap.data();
 
             if (!peerConnection) {
-                return; 
+                // Если мы завершили звонок локально (через endCall), нам больше не нужен этот слушатель.
+                if (unsubscribeCandidateListener) {
+                    unsubscribeCandidateListener();
+                }
+                return;
             }
 
             if (data && data.answer && !peerConnection.currentRemoteDescription) {
@@ -770,6 +767,10 @@ callBtn.addEventListener("click", async () => {
             if (data && data.status === 'rejected') {
                 endCall(true, `${currentChatName.innerText} отклонил звонок.`);
             }
+            
+            if (data && data.status === 'ended') {
+                endCall(false, "Собеседник завершил звонок.");
+            }
         }); 
         
     } catch (e) { 
@@ -781,11 +782,10 @@ callBtn.addEventListener("click", async () => {
  * 4. ВЫЗЫВАЕМЫЙ (CALLEE): Слушает входящие звонки.
  */
 onAuthStateChanged(auth, (user) => {
-    // Старая логика onAuthStateChanged (сброс экрана, установка пользователя) уже выше.
-    
-    // Добавляем слушатель входящих звонков только если пользователь авторизован
     if (user) {
-        // ИСПРАВЛЕНИЕ: Добавляем проверку currentCallId, чтобы не принимать звонок, если мы уже в звонке
+        // ... (инициализация пользователя) ...
+
+        // Слушаем входящие звонки
         onSnapshot(query(callsRef, where('calleeUid', '==', user.uid), where('status', '==', 'ringing')), (snapshot) => {
             if (snapshot.docs.length > 0 && !currentCallId) {
                 const incomingCallDoc = snapshot.docs[0];
@@ -797,8 +797,7 @@ onAuthStateChanged(auth, (user) => {
 
                 // Показываем модальное окно и кнопку "Принять"
                 callModal.style.display = 'flex';
-                // Т.к. у нас нет ника вызывающего, используем его UID
-                callStatus.innerText = `Входящий звонок от ${callOffer.callerUid}`; 
+                callStatus.innerText = `Входящий звонок от ${callOffer.callerUid} (ник пока неизвестен)`; 
                 answerCallBtn.style.display = 'inline-block';
                 hangupCallBtn.textContent = 'Отклонить';
                 callMessage.innerText = 'Нажмите "Ответить"';
@@ -843,7 +842,7 @@ answerCallBtn.addEventListener('click', async () => {
         // Слушаем кандидатов от Caller
         unsubscribeCandidateListener = listenForCandidates('caller'); 
 
-        // ИСПРАВЛЕНО: Добавляем слушатель для отслеживания состояния вызова (для обработки hangup от вызывающего)
+        // ИСПРАВЛЕНИЕ: Добавляем слушатель для отслеживания состояния вызова (для обработки hangup от вызывающего)
         unsubscribeCallListener = onSnapshot(callDocRef, (docSnap) => {
             const data = docSnap.data();
             if (data && data.status === 'ended') {
@@ -926,7 +925,7 @@ async function endCall(updateStatus, message) {
         }
     }
     
-    // 5. Очищаем все слушатели (ОСНОВНОЕ ИСПРАВЛЕНИЕ)
+    // 5. Очищаем все слушатели
      if (unsubscribeCallListener) {
         unsubscribeCallListener();
         unsubscribeCallListener = null;
