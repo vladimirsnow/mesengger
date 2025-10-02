@@ -766,23 +766,39 @@ onAuthStateChanged(auth, (user) => {
 
 
 /**
- * 5. ВЫЗЫВАЕМЫЙ (CALLEE): Принимает звонок.
+ * 5. ВЫЗЫВАЕМЫЙ Принимает звонок.
  */
 answerCallBtn.addEventListener('click', async () => {
-     if (!(await startLocalStream())) return;
-    
+    if (!(await startLocalStream())) return;
+
     callStatus.innerText = `Подключение...`;
     answerCallBtn.style.display = 'none';
     hangupCallBtn.textContent = 'Завершить';
 
-
     setupPeerConnection(false);
 
     try {
-        // Устанавливаем Offer, полученный от вызывающего
+        // Ждем появления offer, если его еще нет
+        let tries = 0;
+        while ((!callOffer.offer || !callOffer.offer.sdp || !callOffer.offer.type) && tries < 10) {
+            await new Promise(res => setTimeout(res, 300));
+            // Получаем свежие данные звонка
+            const callDocSnap = await getDoc(doc(callsRef, currentCallId));
+            callOffer.offer = callDocSnap.data().offer;
+            tries++;
+        }
+        if (!callOffer.offer || !callOffer.offer.sdp || !callOffer.offer.type) {
+            alert("Оффер не готов. Попробуйте еще раз.");
+            callStatus.innerText = "Оффер не готов.";
+            return;
+        }
+
         await peerConnection.setRemoteDescription(new RTCSessionDescription(callOffer.offer));
-        
-        // Создаем Answer (Ответ)
+
+        // ...остальной код...
+
+
+        // Создаем Answer 
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
 
