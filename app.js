@@ -229,7 +229,7 @@ function startChatsListener() {
   console.log("startChatsListener: Подписка на список чатов активна для UID:", currentUid);
 
   unsubscribeChats = onSnapshot(q, (snap) => {
-    // Удаляем все элементы, добавленные через renderChatItem (они имеют класс .dm-item)
+    // Удаляем все элементы, добавленные через renderChatItem 
     chatList.querySelectorAll(".dm-item").forEach(el => el.remove()); 
     
     let count = 0;
@@ -268,7 +268,7 @@ function switchChat(newChatId, chatName, targetUid = null) {
 
   startMessagesListener(currentChatId);
 
-  // Кнопка звонка видна только для 1:1 чатов (когда targetUid не null)
+  // Кнопка звонка видна только для 1:1 чатов
   callBtn.style.display = targetUid ? "inline-block" : "none";
 }
 
@@ -483,9 +483,9 @@ function updatePendingParticipantsDisplay() {
     }
 }
 
-// Обновленная функция поиска (теперь для добавления в группу/чат)
+// Обновленная функция поиска
 searchUserBtn.addEventListener("click", async () => {
-    const nickname = searchNicknameInput.value.trim(); // ИСПРАВЛЕНО
+    const nickname = searchNicknameInput.value.trim();
     
     if (!nickname) return (searchResults.innerHTML = "Введите ник.");
     if (nickname === currentNick) return (searchResults.innerHTML = "Вы уже в чате.");
@@ -532,7 +532,7 @@ searchUserBtn.addEventListener("click", async () => {
 });
 
 
-// ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА (DM или ГРУППА)
+// ФИНАЛИЗАЦИЯ СОЗДАНИЯ ЧАТА DM или ГРУППА
 finalizeChatBtn.addEventListener("click", async () => {
     const participantUids = Object.keys(pendingGroupParticipants);
     const participantNicks = pendingGroupParticipants;
@@ -557,7 +557,7 @@ finalizeChatBtn.addEventListener("click", async () => {
         finalParticipantsArray = participantUids.sort(); 
     }
 
-    // 1. Ищем существующий чат (только для DM)
+    // 1. Ищем существующий чат только для DM
     let chatId = null;
     if (!isGroup) {
         const chatsRef = collection(db, "chats");
@@ -597,42 +597,6 @@ finalizeChatBtn.addEventListener("click", async () => {
     searchUserModal.style.display = "none";
     switchChat(chatId, displayChatName, targetUid);
 });
-
-
-// ----------------------------------------------------
-// ---------- ЛОГИКА АДАПТИВНОГО МЕНЮ ЧАТОВ (ИСПРАВЛЕНА) ----------
-// ----------------------------------------------------
-
-// 1. Открытие/закрытие боковой панели чатов на мобильных устройствах
-menuToggleBtn.addEventListener("click", () => {
-    chatSidebar.classList.add("active");
-});
-
-closeSidebarBtn.addEventListener("click", () => {
-    chatSidebar.classList.remove("active");
-});
-
-// 2. Добавление обработчика для глобального чата
-globalChatLink.addEventListener("click", () => {
-    switchChat("global", "Общий чат");
-    
-    // Закрываем сайдбар после выбора чата на мобильных
-    if (window.innerWidth <= 768) {
-        chatSidebar.classList.remove("active");
-    }
-});
-
-// 3. Закрытие сайдбара при выборе DM/Группового чата
-chatList.addEventListener("click", (e) => {
-    // Проверяем, что кликнули именно на элемент DM/Группового чата (dm-item)
-    if (e.target.classList.contains('dm-item')) {
-        // Логика переключения чата уже внутри renderChatItem. Нужно только закрыть сайдбар
-        if (window.innerWidth <= 768) {
-            chatSidebar.classList.remove("active");
-        }
-    }
-});
-
 
 // --------------------------------------------
 // --- ЛОГИКА ЗВОНКОВ (WebRTC/FIREBASE) ---
